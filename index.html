@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jprbuilds.com</title>
+  <link rel="stylesheet" href="/css/site.css" />
+  <style>
+    .hero {
+      padding: 5rem 0 3rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      max-width: 580px;
+      margin: 0 auto 3rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding-bottom: 2rem;
+    }
+
+    .project-card {
+      display: block;
+      padding: 1.5rem;
+      text-decoration: none;
+    }
+
+    .project-card .cat {
+      font-size: 0.75rem;
+      color: #a78bfa;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .project-card h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #e0e0e0;
+      margin-bottom: 0.35rem;
+    }
+
+    .project-card p {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .project-card .arrow {
+      display: block;
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.2);
+      transition: color 0.2s;
+    }
+
+    .project-card:hover .arrow {
+      color: #a78bfa;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav">
+    <span class="site-label">jprbuilds.com</span>
+  </nav>
+
+  <div class="site-container">
+    <div class="hero">
+      <h1>Hi, I'm <em class="accent">Jason.</em></h1>
+      <p class="text-muted">Technical Training &amp; Development Lead with 10+ years transforming L&amp;D in the automotive sector. I lead teams, build learning technology, and occasionally tinker with web projects on the side. Based in Daventry, UK.</p>
+    </div>
+
+    <div class="card-grid">
+      <a href="/portfolio/" class="project-card card">
+        <div class="cat">Work</div>
+        <h2>Portfolio &amp; CV</h2>
+        <p>Experience, projects and background</p>
+        <span class="arrow">↗</span>
+      </a>
+      <a href="/twit/" class="project-card card">
+        <div class="cat">Work</div>
+        <h2>This Week in Training</h2>
+        <p>L&amp;D thoughts, links and ideas</p>
+        <span class="arrow">↗</span>
+      </a>
+      <a href="/solar/" class="project-card card">
+        <div class="cat">Home</div>
+        <h2>Solar Dashboard</h2>
+        <p>Live stats from the Solis inverter</p>
+        <span class="arrow">↗</span>
+      </a>
+      <a href="/projects/" class="project-card card">
+        <div class="cat">Projects</div>
+        <h2>Hobby Projects</h2>
+        <p>Things built for fun</p>
+        <span class="arrow">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    Jason Richards © 2026 &nbsp;·&nbsp; Daventry, UK
+  </footer>
+
+</body>
+</html>
