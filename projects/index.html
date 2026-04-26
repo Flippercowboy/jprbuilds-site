@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects — JPR Builds</title>
+  <link rel="stylesheet" href="/css/site.css" />
+  <style>
+    .hero {
+      padding: 3rem 0 2.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 6vw, 3rem);
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.25);
+      margin-bottom: 0.75rem;
+    }
+
+    .projects {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .project-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .project-item .tags {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .project-item .project-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: #e0e0e0;
+      margin-bottom: 0.2rem;
+      transition: color 0.2s;
+    }
+
+    .project-item .project-desc {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .project-arrow {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
+      margin-left: 1.5rem;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .project-item:hover .project-title { color: #a78bfa; }
+    .project-item:hover .project-arrow { color: #a78bfa; transform: translate(2px, -2px); }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav">
+    <a href="/" class="back-link">← jprbuilds.com</a>
+  </nav>
+
+  <div class="site-container">
+    <div class="hero">
+      <h1>Hobby <em class="accent">Projects</em></h1>
+      <p class="text-muted">Things built for fun, mostly to learn something new.</p>
+    </div>
+
+    <div class="section-label">Live</div>
+
+    <div class="projects">
+      <a href="/bookmarks/" class="project-item card">
+        <div>
+          <div class="tags">
+            <span class="tag">PHP</span>
+            <span class="tag">MySQL</span>
+          </div>
+          <div class="project-title">Bookmark Manager</div>
+          <div class="project-desc">Save and organise links by category</div>
+        </div>
+        <div class="project-arrow">↗</div>
+      </a>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    Jason Richards © 2026 &nbsp;·&nbsp; Daventry, UK
+  </footer>
+
+</body>
+</html>
