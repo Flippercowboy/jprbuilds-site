@@ -1,0 +1,29 @@
+<svg width="680" height="300" viewBox="0 0 680 300" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>JPRBuilds.com logo</title>
+  <desc>Minimal logo with transparent background, coral accent, for use on dark navy site</desc>
+
+  <!-- Node network mark -->
+  <line x1="340" y1="102" x2="298" y2="68" stroke="#3a3660" stroke-width="1"/>
+  <line x1="340" y1="102" x2="382" y2="68" stroke="#3a3660" stroke-width="1"/>
+  <line x1="340" y1="102" x2="304" y2="130" stroke="#3a3660" stroke-width="1"/>
+  <line x1="340" y1="102" x2="376" y2="130" stroke="#3a3660" stroke-width="1"/>
+  <line x1="298" y1="68" x2="382" y2="68" stroke="#3a3660" stroke-width="1"/>
+  <line x1="304" y1="130" x2="376" y2="130" stroke="#3a3660" stroke-width="1"/>
+
+  <circle cx="298" cy="68" r="6" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+  <circle cx="382" cy="68" r="6" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+  <circle cx="304" cy="130" r="6" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+  <circle cx="376" cy="130" r="6" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+  <circle cx="340" cy="102" r="9" fill="#f4845f"/>
+
+  <!-- Wordmark -->
+  <text x="340" y="182" text-anchor="middle"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="300" font-size="50" letter-spacing="6" fill="#e8e6f0">JPR<tspan fill="#f4845f">BUILDS</tspan></text>
+
+  <line x1="230" y1="197" x2="450" y2="197" stroke="#f4845f" stroke-width="0.75"/>
+
+  <text x="340" y="222" text-anchor="middle"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="300" font-size="11" letter-spacing="3.5" fill="#7b789a">L&amp;D TEAMS · TECHNOLOGY</text>
+</svg>

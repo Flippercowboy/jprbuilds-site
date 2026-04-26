@@ -1,0 +1,27 @@
+<svg width="680" height="80" viewBox="0 0 680 80" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>JPRBuilds.com logo – navbar</title>
+  <desc>Compact horizontal logo for navbar use</desc>
+
+  <!-- Mini node mark -->
+  <g transform="translate(52, 40)">
+    <line x1="0" y1="0" x2="-14" y2="-13" stroke="#3a3660" stroke-width="1"/>
+    <line x1="0" y1="0" x2="14" y2="-13" stroke="#3a3660" stroke-width="1"/>
+    <line x1="0" y1="0" x2="-11" y2="13" stroke="#3a3660" stroke-width="1"/>
+    <line x1="0" y1="0" x2="11" y2="13" stroke="#3a3660" stroke-width="1"/>
+    <line x1="-14" y1="-13" x2="14" y2="-13" stroke="#3a3660" stroke-width="1"/>
+
+    <circle cx="-14" cy="-13" r="3.5" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+    <circle cx="14" cy="-13" r="3.5" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+    <circle cx="-11" cy="13" r="3.5" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+    <circle cx="11" cy="13" r="3.5" fill="none" stroke="#4a4670" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="5" fill="#f4845f"/>
+  </g>
+
+  <!-- Vertical divider -->
+  <line x1="84" y1="22" x2="84" y2="58" stroke="#3a3660" stroke-width="0.75"/>
+
+  <!-- Wordmark -->
+  <text x="96" y="47"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="300" font-size="22" letter-spacing="3" fill="#e8e6f0">JPR<tspan fill="#f4845f">BUILDS</tspan></text>
+</svg>
