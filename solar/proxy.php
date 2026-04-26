@@ -2,6 +2,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
+set_time_limit(120)
 // ── Solis Cloud API credentials ──
 define('SOLIS_KEY_ID',     '1300386381676683008');
 define('SOLIS_KEY_SECRET', '6d8bf199d09149bea5339f219347b372');
@@ -210,6 +211,7 @@ function getSolisMonthly() {
         $month = date('Y-m', $ts);
         $label = date('M y', $ts);
 
+        usleep
         $res  = solisRequest('/v1/api/inverterMonth', [
             'id'    => $inverterId,
             'sn'    => $inverterSn,
