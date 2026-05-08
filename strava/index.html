@@ -1,1 +1,620 @@
-pbpaste > ~/Sites/jprbuilds-site/strava/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Running Log — jprbuilds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --gold: #c9a96e;
+    --gold-dim: rgba(201,169,110,0.15);
+    --bg: #0f0e0c;
+    --bg2: #161512;
+    --bg3: #1d1b17;
+    --border: rgba(201,169,110,0.2);
+    --text: #e8e0d0;
+    --text-muted: #8a8070;
+    --text-dim: #5a5248;
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+  }
+
+  header .site-name {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text-muted);
+  }
+
+  header .site-name a { color: var(--text-muted); }
+  header .site-name a:hover { color: var(--gold); text-decoration: none; }
+
+  header h1 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--text);
+  }
+
+  header .strava-badge {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  header .strava-badge span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fc4c02;
+    display: inline-block;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    min-height: calc(100vh - 73px);
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stats-bar {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .stat-item { text-align: center; }
+
+  .stat-item .val {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--gold);
+    display: block;
+    line-height: 1.2;
+  }
+
+  .stat-item .lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .activities-header {
+    padding: 1rem 1.5rem 0.5rem;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+
+  .activities-list {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .activity-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(201,169,110,0.08);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px;
+    align-items: start;
+  }
+
+  .activity-item:hover { background: var(--bg2); }
+  .activity-item.active { background: var(--gold-dim); border-left: 2px solid var(--gold); }
+
+  .activity-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .activity-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .activity-dist {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--gold);
+    text-align: right;
+  }
+
+  .activity-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
+  .hr-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 20px;
+    margin-top: 4px;
+  }
+
+  .hr-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map-container {
+    position: relative;
+    height: 420px;
+    background: var(--bg2);
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  .map-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 999;
+    background: rgba(15,14,12,0.88);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    backdrop-filter: blur(4px);
+  }
+
+  .map-overlay .activity-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+
+  .map-overlay .activity-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .hr-legend {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 999;
+    background: rgba(15,14,12,0.88);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .hr-legend-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+  }
+
+  .hr-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .hr-legend-swatch {
+    width: 20px;
+    height: 4px;
+    border-radius: 2px;
+  }
+
+  .charts-area {
+    flex: 1;
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-content: start;
+  }
+
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+
+  .chart-card.full-width { grid-column: 1 / -1; }
+
+  .chart-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .no-hr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .detail-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    grid-column: 1 / -1;
+  }
+
+  .detail-stat {
+    background: var(--bg3);
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+
+  .detail-stat .d-val {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: var(--gold);
+  }
+
+  .detail-stat .d-lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .leaflet-container { background: var(--bg2) !important; }
+  .leaflet-tile { filter: brightness(0.7) saturate(0.4); }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 320px; }
+    .charts-area { grid-template-columns: 1fr; }
+    .detail-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="site-name"><a href="/">jprbuilds.com</a></div>
+  <h1>Running Log</h1>
+  <div class="strava-badge"><span></span> via Strava</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-item"><span class="val" id="totalRuns">—</span><span class="lbl">Runs</span></div>
+      <div class="stat-item"><span class="val" id="totalDist">—</span><span class="lbl">km this month</span></div>
+      <div class="stat-item"><span class="val" id="avgPace">—</span><span class="lbl">Avg pace</span></div>
+    </div>
+    <div class="activities-header">Recent activities</div>
+    <div class="activities-list" id="activitiesList">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="map-container">
+      <div id="map"></div>
+      <div class="map-overlay" id="mapOverlay" style="display:none">
+        <div class="activity-title" id="overlayTitle"></div>
+        <div class="activity-subtitle" id="overlaySubtitle"></div>
+      </div>
+      <div class="hr-legend">
+        <div class="hr-legend-title">Heart rate</div>
+        <div class="hr-legend-row"><div class="hr-legend-swatch" style="background:#4fc3f7"></div> Easy &lt;120</div>
+        <div class="hr-legend-row"><div class="hr-legend-swatch" style="background:#aed581"></div> Steady 120–140</div>
+        <div class="hr-legend-row"><div class="hr-legend-swatch" style="background:#ffeb3b"></div> Tempo 140–155</div>
+        <div class="hr-legend-row"><div class="hr-legend-swatch" style="background:#ff8c42"></div> Hard 155–168</div>
+        <div class="hr-legend-row"><div class="hr-legend-swatch" style="background:#e53935"></div> Max &gt;168</div>
+      </div>
+    </div>
+
+    <div class="charts-area" id="chartsArea">
+      <div class="loading" style="grid-column:1/-1; height:200px"><div class="spinner"></div> Select an activity</div>
+    </div>
+  </main>
+</div>
+
+<script>
+const PROXY = '/strava/proxy.php';
+let map = null;
+let routeLayer = null;
+let hrChart = null;
+let altChart = null;
+let activities = [];
+
+function hrColor(bpm) {
+  if (bpm < 120) return '#4fc3f7';
+  if (bpm < 140) return '#aed581';
+  if (bpm < 155) return '#ffeb3b';
+  if (bpm < 168) return '#ff8c42';
+  return '#e53935';
+}
+
+function formatDist(m) { return (m / 1000).toFixed(2) + ' km'; }
+function formatPace(mps) {
+  if (!mps) return '—';
+  const spm = 1000 / mps;
+  const m = Math.floor(spm / 60);
+  const s = Math.round(spm % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toString().padStart(2, '0');
+  return m > 59 ? `${Math.floor(m/60)}h ${m%60}m` : `${m}:${sec}`;
+}
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function hrZoneLabel(avg) {
+  if (!avg) return null;
+  if (avg < 120) return { label: 'Easy', color: '#4fc3f7' };
+  if (avg < 140) return { label: 'Steady', color: '#aed581' };
+  if (avg < 155) return { label: 'Tempo', color: '#ffeb3b' };
+  if (avg < 168) return { label: 'Hard', color: '#ff8c42' };
+  return { label: 'Max effort', color: '#e53935' };
+}
+
+async function loadActivities() {
+  try {
+    const res = await fetch(`${PROXY}?endpoint=athlete/activities&per_page=20`);
+    activities = await res.json();
+    const runs = activities.filter(a => a.sport_type === 'Run' || a.type === 'Run');
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthRuns = runs.filter(a => new Date(a.start_date) >= monthStart);
+    const monthDist = monthRuns.reduce((s, a) => s + a.distance, 0);
+    const avgSpd = runs.filter(a => a.average_speed).reduce((s, a) => s + a.average_speed, 0) / runs.filter(a => a.average_speed).length;
+
+    document.getElementById('totalRuns').textContent = monthRuns.length;
+    document.getElementById('totalDist').textContent = (monthDist / 1000).toFixed(1);
+    document.getElementById('avgPace').textContent = formatPace(avgSpd);
+
+    const list = document.getElementById('activitiesList');
+    list.innerHTML = '';
+    runs.slice(0, 20).forEach((a, i) => {
+      const zone = hrZoneLabel(a.average_heartrate);
+      const div = document.createElement('div');
+      div.className = 'activity-item' + (i === 0 ? ' active' : '');
+      div.dataset.id = a.id;
+      div.innerHTML = `
+        <div>
+          <div class="activity-name">${a.name}</div>
+          <div class="activity-meta">${formatDate(a.start_date_local)}</div>
+          ${zone && a.average_heartrate ? `<div class="hr-pill" style="background:${zone.color}22;color:${zone.color}"><span class="dot" style="background:${zone.color}"></span>${Math.round(a.average_heartrate)} bpm avg</div>` : ''}
+        </div>
+        <div>
+          <div class="activity-dist">${formatDist(a.distance)}</div>
+          <div class="activity-time">${formatPace(a.average_speed)} /km</div>
+        </div>`;
+      div.addEventListener('click', () => selectActivity(a, div));
+      list.appendChild(div);
+    });
+
+    if (runs.length > 0) selectActivity(runs[0], list.querySelector('.activity-item'));
+  } catch(e) {
+    document.getElementById('activitiesList').innerHTML = '<div class="loading">Failed to load activities</div>';
+  }
+}
+
+async function selectActivity(activity, el) {
+  document.querySelectorAll('.activity-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+
+  document.getElementById('mapOverlay').style.display = 'block';
+  document.getElementById('overlayTitle').textContent = activity.name;
+  document.getElementById('overlaySubtitle').textContent = `${formatDate(activity.start_date_local)} · ${formatDist(activity.distance)}`;
+
+  document.getElementById('chartsArea').innerHTML = '<div class="loading" style="grid-column:1/-1;height:200px"><div class="spinner"></div> Loading streams…</div>';
+
+  if (!map) {
+    map = L.map('map', { zoomControl: true, attributionControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  }
+  if (routeLayer) map.removeLayer(routeLayer);
+
+  try {
+    const res = await fetch(`${PROXY}?endpoint=activities/${activity.id}/streams&keys=time,latlng,heartrate,altitude,distance&key_by_type=true`);
+    const streams = await res.json();
+
+    const latlng = streams.latlng?.data;
+    const hr = streams.heartrate?.data;
+    const alt = streams.altitude?.data;
+    const dist = streams.distance?.data;
+    const time = streams.time?.data;
+
+    if (latlng && latlng.length > 0) {
+      const segments = [];
+      for (let i = 0; i < latlng.length - 1; i++) {
+        const color = hr ? hrColor(hr[i]) : '#c9a96e';
+        segments.push(L.polyline([latlng[i], latlng[i+1]], { color, weight: 4, opacity: 0.9 }));
+      }
+      routeLayer = L.layerGroup(segments).addTo(map);
+      map.fitBounds(L.latLngBounds(latlng), { padding: [30, 30] });
+    }
+
+    renderCharts(activity, hr, alt, dist, time);
+  } catch(e) {
+    document.getElementById('chartsArea').innerHTML = '<div class="loading" style="grid-column:1/-1">Failed to load stream data</div>';
+  }
+}
+
+function renderCharts(activity, hr, alt, dist, time) {
+  if (hrChart) { hrChart.destroy(); hrChart = null; }
+  if (altChart) { altChart.destroy(); altChart = null; }
+
+  const distKm = dist ? dist.map(d => (d/1000).toFixed(2)) : (time ? time.map(t => (t/60).toFixed(1)) : []);
+  const xLabel = dist ? 'km' : 'min';
+
+  const chartsArea = document.getElementById('chartsArea');
+
+  const detailStats = `
+    <div class="detail-stats">
+      <div class="detail-stat"><div class="d-val">${formatDist(activity.distance)}</div><div class="d-lbl">Distance</div></div>
+      <div class="detail-stat"><div class="d-val">${formatTime(activity.moving_time)}</div><div class="d-lbl">Moving time</div></div>
+      <div class="detail-stat"><div class="d-val">${formatPace(activity.average_speed)}</div><div class="d-lbl">Avg pace /km</div></div>
+      <div class="detail-stat"><div class="d-val">${activity.total_elevation_gain ? Math.round(activity.total_elevation_gain) + 'm' : '—'}</div><div class="d-lbl">Elevation gain</div></div>
+    </div>`;
+
+  const hrSection = hr ? `
+    <div class="chart-card full-width">
+      <div class="chart-label">Heart rate (bpm)</div>
+      <div style="position:relative;height:140px"><canvas id="hrCanvas" role="img" aria-label="Heart rate over distance"></canvas></div>
+    </div>` : `<div class="chart-card full-width"><div class="no-hr">No heart rate data for this activity</div></div>`;
+
+  const altSection = alt ? `
+    <div class="chart-card full-width">
+      <div class="chart-label">Elevation (m)</div>
+      <div style="position:relative;height:100px"><canvas id="altCanvas" role="img" aria-label="Elevation profile"></canvas></div>
+    </div>` : '';
+
+  chartsArea.innerHTML = detailStats + hrSection + altSection;
+
+  const tick = { color: '#5a5248', font: { size: 11, family: 'DM Sans' } };
+  const grid = { color: 'rgba(201,169,110,0.08)' };
+  const skip = { autoSkip: true, maxTicksLimit: 8 };
+
+  if (hr) {
+    hrChart = new Chart(document.getElementById('hrCanvas'), {
+      type: 'line',
+      data: {
+        labels: distKm,
+        datasets: [{
+          data: hr,
+          borderColor: '#ff8c42',
+          backgroundColor: 'rgba(255,140,66,0.1)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + ' bpm', title: t => t[0].label + ' ' + xLabel } } },
+        scales: {
+          x: { ticks: { ...tick, ...skip }, grid },
+          y: { min: 50, ticks: { ...tick, callback: v => v + ' bpm' }, grid }
+        }
+      }
+    });
+  }
+
+  if (alt) {
+    altChart = new Chart(document.getElementById('altCanvas'), {
+      type: 'line',
+      data: {
+        labels: distKm,
+        datasets: [{
+          data: alt,
+          borderColor: '#c9a96e',
+          backgroundColor: 'rgba(201,169,110,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + 'm', title: t => t[0].label + ' ' + xLabel } } },
+        scales: {
+          x: { ticks: { ...tick, ...skip }, grid },
+          y: { ticks: { ...tick, callback: v => v + 'm' }, grid }
+        }
+      }
+    });
+  }
+}
+
+loadActivities();
+</script>
+</body>
+</html>pbpaste > ~/Sites/jprbuilds-site/strava/index.html
