@@ -9,17 +9,25 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
+  .page-header {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 0.5rem;
+  }
+
   .layout {
     display: grid;
     grid-template-columns: 320px 1fr;
-    min-height: calc(100vh - 70px);
-    max-width: 100%;
+    min-height: calc(100vh - 130px);
   }
 
   .sidebar {
     border-right: 1px solid rgba(255,255,255,0.07);
     display: flex;
     flex-direction: column;
+    max-height: calc(100vh - 130px);
+    position: sticky;
+    top: 0;
   }
 
   .stats-bar {
@@ -27,282 +35,127 @@
     border-bottom: 1px solid rgba(255,255,255,0.07);
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 1rem;
+    gap: 0.5rem;
   }
-
   .stat-item { text-align: center; }
+  .stat-item .val { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: #a78bfa; display: block; line-height: 1.2; }
+  .stat-item .lbl { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em; }
 
-  .stat-item .val {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.4rem;
-    color: #a78bfa;
-    display: block;
-    line-height: 1.2;
-  }
-
-  .stat-item .lbl {
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .activities-header {
-    padding: 1rem 1.5rem 0.5rem;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.2);
-  }
-
-  .activities-list {
-    overflow-y: auto;
-    flex: 1;
-  }
+  .activities-header { padding: 0.75rem 1.5rem 0.4rem; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.2); }
+  .activities-list { overflow-y: auto; flex: 1; }
 
   .activity-item {
-    padding: 1rem 1.5rem;
+    padding: 0.875rem 1.5rem;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer;
-    transition: background 0.15s, border-color 0.25s;
+    transition: background 0.15s;
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 4px;
+    gap: 2px;
     align-items: start;
+    border-left: 2px solid transparent;
   }
+  .activity-item:hover { background: rgba(255,255,255,0.03); }
+  .activity-item.active { background: rgba(167,139,250,0.08); border-left-color: #a78bfa; }
+  .activity-name { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .activity-meta { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 1px; }
+  .activity-dist { font-family: 'DM Serif Display', serif; font-size: 1rem; color: #a78bfa; text-align: right; }
+  .activity-pace { font-size: 11px; color: rgba(255,255,255,0.3); text-align: right; }
+  .hr-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 1px 5px; border-radius: 20px; margin-top: 3px; }
+  .hr-pill .dot { width: 5px; height: 5px; border-radius: 50%; }
 
-  .activity-item:hover {
-    background: rgba(255,255,255,0.03);
-    border-left: 2px solid rgba(167,139,250,0.3);
-  }
+  .main { display: flex; flex-direction: column; overflow-y: auto; }
 
-  .activity-item.active {
-    background: rgba(167,139,250,0.08);
-    border-left: 2px solid #a78bfa;
-  }
-
-  .activity-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .activity-meta {
-    font-size: 12px;
-    color: rgba(255,255,255,0.3);
-    margin-top: 2px;
-  }
-
-  .activity-dist {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem;
-    color: #a78bfa;
-    text-align: right;
-  }
-
-  .activity-time {
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    text-align: right;
-  }
-
-  .hr-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 20px;
-    margin-top: 4px;
-  }
-
-  .hr-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
-
-  .main {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .map-container {
-    position: relative;
-    height: 420px;
-    background: rgba(255,255,255,0.02);
-  }
-
+  .map-container { position: relative; height: 380px; background: rgba(255,255,255,0.02); flex-shrink: 0; }
   #map { width: 100%; height: 100%; }
 
   .map-overlay {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 999;
-    background: rgba(26,24,51,0.92);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 10px 14px;
-    backdrop-filter: blur(8px);
+    position: absolute; top: 12px; left: 12px; z-index: 999;
+    background: rgba(26,24,51,0.92); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(8px);
   }
-
-  .map-overlay .activity-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem;
-    color: rgba(255,255,255,0.9);
-  }
-
-  .map-overlay .activity-subtitle {
-    font-size: 12px;
-    color: rgba(255,255,255,0.4);
-    margin-top: 2px;
-  }
+  .map-overlay .activity-title { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: rgba(255,255,255,0.9); }
+  .map-overlay .activity-subtitle { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
 
   .hr-legend {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    z-index: 999;
-    background: rgba(26,24,51,0.92);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 8px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    backdrop-filter: blur(8px);
+    position: absolute; bottom: 12px; right: 12px; z-index: 999;
+    background: rgba(26,24,51,0.92); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; gap: 3px; backdrop-filter: blur(8px);
   }
+  .hr-legend-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.25); margin-bottom: 2px; }
+  .hr-legend-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: rgba(255,255,255,0.45); }
+  .hr-legend-swatch { width: 18px; height: 3px; border-radius: 2px; }
 
-  .hr-legend-title {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.25);
-    margin-bottom: 2px;
+  .detail-area { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+  .top-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.6rem; }
+  .top-stat {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 0.75rem 0.875rem; transition: border-color 0.2s;
   }
+  .top-stat:hover { border-color: rgba(167,139,250,0.35); }
+  .top-stat .ts-val { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: #a78bfa; line-height: 1.1; }
+  .top-stat .ts-lbl { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
 
-  .hr-legend-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.45);
+  .detail-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .detail-col { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  .section-card {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 1rem 1.125rem; transition: border-color 0.2s;
   }
+  .section-card:hover { border-color: rgba(167,139,250,0.3); }
+  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.3); margin-bottom: 0.75rem; }
 
-  .hr-legend-swatch { width: 20px; height: 4px; border-radius: 2px; }
+  .splits-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .splits-table th { text-align: left; font-weight: 500; color: rgba(255,255,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .splits-table th:not(:first-child) { text-align: right; }
+  .splits-table td { padding: 5px 0; color: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+  .splits-table td:not(:first-child) { text-align: right; }
+  .splits-table td:first-child { color: rgba(255,255,255,0.4); font-size: 11px; }
+  .splits-table .pace-val { color: rgba(255,255,255,0.85); font-weight: 500; }
+  .pace-bar-wrap { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .pace-bar { height: 3px; border-radius: 2px; background: #a78bfa; opacity: 0.6; min-width: 4px; }
 
-  .charts-area {
-    flex: 1;
-    padding: 1.5rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    align-content: start;
-  }
+  .efforts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .effort-item { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .effort-name { font-size: 11px; color: rgba(255,255,255,0.45); }
+  .effort-time { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.8); }
 
-  .chart-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 1rem 1.25rem;
-    transition: border-color 0.25s;
-  }
+  .segment-item { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .segment-item:last-child { border-bottom: none; }
+  .segment-name { font-size: 12px; color: rgba(255,255,255,0.7); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .segment-pr { font-size: 10px; padding: 1px 6px; border-radius: 10px; white-space: nowrap; }
+  .pr-1 { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
+  .pr-2 { background: rgba(192,192,192,0.15); color: #c0c0c0; border: 1px solid rgba(192,192,192,0.3); }
+  .pr-3 { background: rgba(205,127,50,0.15); color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
+  .pr-none { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.08); }
 
-  .chart-card:hover { border-color: rgba(167,139,250,0.4); }
-  .chart-card.full-width { grid-column: 1 / -1; }
+  .chart-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1rem 1.125rem; transition: border-color 0.2s; }
+  .chart-card:hover { border-color: rgba(167,139,250,0.3); }
+  .chart-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.3); margin-bottom: 10px; }
 
-  .chart-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.3);
-    margin-bottom: 10px;
-  }
+  .meta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .meta-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 4px 10px; }
 
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: rgba(255,255,255,0.3);
-    font-size: 13px;
-    gap: 8px;
-  }
-
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: #a78bfa;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
+  .loading { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 200px; color: rgba(255,255,255,0.3); font-size: 13px; gap: 8px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .no-hr {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 120px;
-    color: rgba(255,255,255,0.2);
-    font-size: 13px;
-    font-style: italic;
-  }
-
-  .detail-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    grid-column: 1 / -1;
-  }
-
-  .detail-stat {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 10px 14px;
-    transition: border-color 0.25s;
-  }
-
-  .detail-stat:hover { border-color: rgba(167,139,250,0.4); }
-
-  .detail-stat .d-val {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.3rem;
-    color: #a78bfa;
-  }
-
-  .detail-stat .d-lbl {
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    margin-top: 2px;
-  }
-
-  .strava-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.875rem;
-    color: rgba(255,255,255,0.25);
-  }
-
-  .strava-badge span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #fc4c02;
-    display: inline-block;
-  }
+  .strava-badge { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; color: rgba(255,255,255,0.25); }
+  .strava-badge span { width: 8px; height: 8px; border-radius: 50%; background: #fc4c02; display: inline-block; }
 
   .leaflet-container { background: #1a1833 !important; }
   .leaflet-tile { filter: brightness(0.55) saturate(0.3) hue-rotate(200deg); }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
     .layout { grid-template-columns: 1fr; }
-    .sidebar { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); max-height: 320px; }
-    .charts-area { grid-template-columns: 1fr; }
-    .detail-stats { grid-template-columns: repeat(2, 1fr); }
+    .sidebar { max-height: 300px; position: static; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .top-stats { grid-template-columns: repeat(3, 1fr); }
+    .detail-cols { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .top-stats { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -313,18 +166,18 @@
   <div class="strava-badge"><span></span> via Strava</div>
 </nav>
 
-<div style="max-width:960px; margin: 0 auto; padding: 2rem 1.5rem 0.5rem;">
+<div class="page-header">
   <h1>Running <em class="accent">Log</em></h1>
 </div>
 
 <div class="layout">
   <aside class="sidebar">
-    <div class="stats-bar" id="statsBar">
-      <div class="stat-item"><span class="val" id="totalRuns">—</span><span class="lbl">Runs</span></div>
+    <div class="stats-bar">
+      <div class="stat-item"><span class="val" id="totalRuns">—</span><span class="lbl">Runs this month</span></div>
       <div class="stat-item"><span class="val" id="totalDist">—</span><span class="lbl">km this month</span></div>
       <div class="stat-item"><span class="val" id="avgPace">—</span><span class="lbl">Avg pace</span></div>
     </div>
-    <div class="activities-header">Recent activities</div>
+    <div class="activities-header">Recent runs</div>
     <div class="activities-list" id="activitiesList">
       <div class="loading"><div class="spinner"></div> Loading…</div>
     </div>
@@ -346,20 +199,19 @@
         <div class="hr-legend-row"><div class="hr-legend-swatch" style="background:#e53935"></div> Max &gt;168</div>
       </div>
     </div>
-
-    <div class="charts-area" id="chartsArea">
-      <div class="loading" style="grid-column:1/-1; height:200px"><div class="spinner"></div> Select an activity</div>
+    <div class="detail-area" id="detailArea">
+      <div class="loading">Select a run to see details</div>
     </div>
   </main>
 </div>
 
+<footer class="site-footer">
+  Jason Richards © 2026 &nbsp;·&nbsp; Daventry, UK
+</footer>
+
 <script>
 const PROXY = '/strava/proxy.php';
-let map = null;
-let routeLayer = null;
-let hrChart = null;
-let altChart = null;
-let activities = [];
+let map = null, routeLayer = null, hrChart = null, altChart = null;
 
 function hrColor(bpm) {
   if (bpm < 120) return '#4fc3f7';
@@ -368,214 +220,219 @@ function hrColor(bpm) {
   if (bpm < 168) return '#ff8c42';
   return '#e53935';
 }
-
-function formatDist(m) { return (m / 1000).toFixed(2) + ' km'; }
-function formatPace(mps) {
+function fDist(m) { return (m/1000).toFixed(2) + ' km'; }
+function fPace(mps) {
   if (!mps) return '—';
-  const spm = 1000 / mps;
-  const m = Math.floor(spm / 60);
-  const s = Math.round(spm % 60).toString().padStart(2, '0');
+  const spm = 1000/mps, m = Math.floor(spm/60), s = Math.round(spm%60).toString().padStart(2,'0');
   return `${m}:${s}`;
 }
-function formatTime(s) {
-  const m = Math.floor(s / 60);
-  const sec = (s % 60).toString().padStart(2, '0');
-  return m > 59 ? `${Math.floor(m/60)}h ${m%60}m` : `${m}:${sec}`;
+function fTime(s) {
+  const m = Math.floor(s/60), sec = (s%60).toString().padStart(2,'0');
+  return m > 59 ? `${Math.floor(m/60)}h ${(m%60).toString().padStart(2,'0')}m` : `${m}:${sec}`;
 }
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+function fDate(iso) { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fShortTime(s) {
+  if (s < 60) return s + 's';
+  const m = Math.floor(s/60), sec = (s%60).toString().padStart(2,'0');
+  return m > 59 ? `${Math.floor(m/60)}:${(m%60).toString().padStart(2,'0')}:${sec}` : `${m}:${sec}`;
 }
-
-function hrZoneLabel(avg) {
+function hrZone(avg) {
   if (!avg) return null;
-  if (avg < 120) return { label: 'Easy', color: '#4fc3f7' };
-  if (avg < 140) return { label: 'Steady', color: '#aed581' };
-  if (avg < 155) return { label: 'Tempo', color: '#ffeb3b' };
-  if (avg < 168) return { label: 'Hard', color: '#ff8c42' };
-  return { label: 'Max effort', color: '#e53935' };
+  if (avg < 120) return { label:'Easy', color:'#4fc3f7' };
+  if (avg < 140) return { label:'Steady', color:'#aed581' };
+  if (avg < 155) return { label:'Tempo', color:'#ffeb3b' };
+  if (avg < 168) return { label:'Hard', color:'#ff8c42' };
+  return { label:'Max effort', color:'#e53935' };
 }
 
 async function loadActivities() {
   try {
-    const res = await fetch(`${PROXY}?endpoint=athlete/activities&per_page=20`);
-    activities = await res.json();
-    const runs = activities.filter(a => a.sport_type === 'Run' || a.type === 'Run');
+    const res = await fetch(`${PROXY}?action=activities`);
+    const runs = await res.json();
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const now = new Date(), monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthRuns = runs.filter(a => new Date(a.start_date) >= monthStart);
-    const monthDist = monthRuns.reduce((s, a) => s + a.distance, 0);
-    const avgSpd = runs.filter(a => a.average_speed).reduce((s, a) => s + a.average_speed, 0) / runs.filter(a => a.average_speed).length;
+    const monthDist = monthRuns.reduce((s,a) => s + a.distance, 0);
+    const speeds = runs.filter(a => a.average_speed);
+    const avgSpd = speeds.reduce((s,a) => s + a.average_speed, 0) / speeds.length;
 
     document.getElementById('totalRuns').textContent = monthRuns.length;
-    document.getElementById('totalDist').textContent = (monthDist / 1000).toFixed(1);
-    document.getElementById('avgPace').textContent = formatPace(avgSpd);
+    document.getElementById('totalDist').textContent = (monthDist/1000).toFixed(1);
+    document.getElementById('avgPace').textContent = fPace(avgSpd);
 
     const list = document.getElementById('activitiesList');
     list.innerHTML = '';
-    runs.slice(0, 20).forEach((a, i) => {
-      const zone = hrZoneLabel(a.average_heartrate);
+    runs.forEach((a, i) => {
+      const zone = hrZone(a.average_heartrate);
       const div = document.createElement('div');
       div.className = 'activity-item' + (i === 0 ? ' active' : '');
-      div.dataset.id = a.id;
       div.innerHTML = `
         <div>
           <div class="activity-name">${a.name}</div>
-          <div class="activity-meta">${formatDate(a.start_date_local)}</div>
-          ${zone && a.average_heartrate ? `<div class="hr-pill" style="background:${zone.color}22;color:${zone.color}"><span class="dot" style="background:${zone.color}"></span>${Math.round(a.average_heartrate)} bpm avg</div>` : ''}
+          <div class="activity-meta">${fDate(a.start_date_local)}</div>
+          ${zone && a.average_heartrate ? `<div class="hr-pill" style="background:${zone.color}22;color:${zone.color}"><span class="dot" style="background:${zone.color}"></span>${Math.round(a.average_heartrate)} bpm</div>` : ''}
         </div>
         <div>
-          <div class="activity-dist">${formatDist(a.distance)}</div>
-          <div class="activity-time">${formatPace(a.average_speed)} /km</div>
+          <div class="activity-dist">${fDist(a.distance)}</div>
+          <div class="activity-pace">${fPace(a.average_speed)} /km</div>
         </div>`;
-      div.addEventListener('click', () => selectActivity(a, div));
+      div.addEventListener('click', () => selectActivity(a.id, div));
       list.appendChild(div);
     });
 
-    if (runs.length > 0) selectActivity(runs[0], list.querySelector('.activity-item'));
+    if (runs.length > 0) selectActivity(runs[0].id, list.querySelector('.activity-item'));
   } catch(e) {
-    document.getElementById('activitiesList').innerHTML = '<div class="loading">Failed to load activities</div>';
+    document.getElementById('activitiesList').innerHTML = '<div class="loading">Failed to load</div>';
   }
 }
 
-async function selectActivity(activity, el) {
+async function selectActivity(id, el) {
   document.querySelectorAll('.activity-item').forEach(i => i.classList.remove('active'));
   el.classList.add('active');
+  document.getElementById('detailArea').innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+
+  const [actRes, streamRes] = await Promise.all([
+    fetch(`${PROXY}?action=activity&id=${id}`),
+    fetch(`${PROXY}?action=streams&id=${id}`)
+  ]);
+  const activity = await actRes.json();
+  const streams = await streamRes.json();
 
   document.getElementById('mapOverlay').style.display = 'block';
   document.getElementById('overlayTitle').textContent = activity.name;
-  document.getElementById('overlaySubtitle').textContent = `${formatDate(activity.start_date_local)} · ${formatDist(activity.distance)}`;
+  document.getElementById('overlaySubtitle').textContent = `${fDate(activity.start_date_local)} · ${fDist(activity.distance)}`;
 
-  document.getElementById('chartsArea').innerHTML = '<div class="loading" style="grid-column:1/-1;height:200px"><div class="spinner"></div> Loading streams…</div>';
+  drawRoute(streams);
+  renderDetail(activity, streams);
+}
 
+function drawRoute(streams) {
   if (!map) {
     map = L.map('map', { zoomControl: true, attributionControl: false });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   }
   if (routeLayer) map.removeLayer(routeLayer);
-
-  try {
-    const res = await fetch(`${PROXY}?endpoint=activities/${activity.id}/streams&keys=time,latlng,heartrate,altitude,distance&key_by_type=true`);
-    const streams = await res.json();
-
-    const latlng = streams.latlng?.data;
-    const hr = streams.heartrate?.data;
-    const alt = streams.altitude?.data;
-    const dist = streams.distance?.data;
-    const time = streams.time?.data;
-
-    if (latlng && latlng.length > 0) {
-      const segments = [];
-      for (let i = 0; i < latlng.length - 1; i++) {
-        const color = hr ? hrColor(hr[i]) : '#c9a96e';
-        segments.push(L.polyline([latlng[i], latlng[i+1]], { color, weight: 4, opacity: 0.9 }));
-      }
-      routeLayer = L.layerGroup(segments).addTo(map);
-      map.fitBounds(L.latLngBounds(latlng), { padding: [30, 30] });
-    }
-
-    renderCharts(activity, hr, alt, dist, time);
-  } catch(e) {
-    document.getElementById('chartsArea').innerHTML = '<div class="loading" style="grid-column:1/-1">Failed to load stream data</div>';
+  const latlng = streams.latlng?.data, hr = streams.heartrate?.data;
+  if (!latlng || !latlng.length) return;
+  const segments = [];
+  for (let i = 0; i < latlng.length - 1; i++) {
+    segments.push(L.polyline([latlng[i], latlng[i+1]], { color: hr ? hrColor(hr[i]) : '#a78bfa', weight: 4, opacity: 0.9 }));
   }
+  routeLayer = L.layerGroup(segments).addTo(map);
+  map.fitBounds(L.latLngBounds(latlng), { padding: [30, 30] });
 }
 
-function renderCharts(activity, hr, alt, dist, time) {
+function renderDetail(a, streams) {
   if (hrChart) { hrChart.destroy(); hrChart = null; }
   if (altChart) { altChart.destroy(); altChart = null; }
 
-  const distKm = dist ? dist.map(d => (d/1000).toFixed(2)) : (time ? time.map(t => (t/60).toFixed(1)) : []);
-  const xLabel = dist ? 'km' : 'min';
+  const hr = streams.heartrate?.data;
+  const alt = streams.altitude?.data;
+  const dist = streams.distance?.data;
+  const distKm = dist ? dist.map(d => (d/1000).toFixed(2)) : [];
 
-  const chartsArea = document.getElementById('chartsArea');
+  // Top stats
+  const topStats = `<div class="top-stats">
+    <div class="top-stat"><div class="ts-val">${fDist(a.distance)}</div><div class="ts-lbl">Distance</div></div>
+    <div class="top-stat"><div class="ts-val">${fTime(a.moving_time)}</div><div class="ts-lbl">Moving time</div></div>
+    <div class="top-stat"><div class="ts-val">${fPace(a.average_speed)}</div><div class="ts-lbl">Avg pace</div></div>
+    <div class="top-stat"><div class="ts-val">${a.average_heartrate ? Math.round(a.average_heartrate) + ' bpm' : '—'}</div><div class="ts-lbl">Avg HR</div></div>
+    <div class="top-stat"><div class="ts-val">${a.max_heartrate ? a.max_heartrate + ' bpm' : '—'}</div><div class="ts-lbl">Max HR</div></div>
+    <div class="top-stat"><div class="ts-val">${a.total_elevation_gain ? Math.round(a.total_elevation_gain) + 'm' : '—'}</div><div class="ts-lbl">Elevation</div></div>
+    <div class="top-stat"><div class="ts-val">${a.average_cadence ? Math.round(a.average_cadence * 2) + ' spm' : '—'}</div><div class="ts-lbl">Cadence</div></div>
+    <div class="top-stat"><div class="ts-val">${a.calories || '—'}</div><div class="ts-lbl">Calories</div></div>
+    <div class="top-stat"><div class="ts-val">${a.suffer_score || '—'}</div><div class="ts-lbl">Suffer score</div></div>
+    <div class="top-stat"><div class="ts-val">${fPace(a.max_speed)}</div><div class="ts-lbl">Best pace</div></div>
+    <div class="top-stat"><div class="ts-val">${a.achievement_count || 0}</div><div class="ts-lbl">Achievements</div></div>
+    <div class="top-stat"><div class="ts-val">${a.pr_count || 0}</div><div class="ts-lbl">PRs</div></div>
+  </div>`;
 
-  const detailStats = `
-    <div class="detail-stats">
-      <div class="detail-stat"><div class="d-val">${formatDist(activity.distance)}</div><div class="d-lbl">Distance</div></div>
-      <div class="detail-stat"><div class="d-val">${formatTime(activity.moving_time)}</div><div class="d-lbl">Moving time</div></div>
-      <div class="detail-stat"><div class="d-val">${formatPace(activity.average_speed)}</div><div class="d-lbl">Avg pace /km</div></div>
-      <div class="detail-stat"><div class="d-val">${activity.total_elevation_gain ? Math.round(activity.total_elevation_gain) + 'm' : '—'}</div><div class="d-lbl">Elevation gain</div></div>
+  // Meta chips
+  const metaRow = `<div class="meta-row">
+    ${a.gear ? `<div class="meta-chip">👟 ${a.gear.name} · ${(a.gear.distance/1000).toFixed(0)}km total</div>` : ''}
+    <div class="meta-chip">📅 ${fDate(a.start_date_local)}</div>
+    ${a.device_name ? `<div class="meta-chip">📱 ${a.device_name}</div>` : ''}
+  </div>`;
+
+  // Splits
+  const splits = (a.splits_metric || []).filter(s => s.distance > 100);
+  const paces = splits.map(s => s.average_speed > 0 ? 1000/s.average_speed : 999);
+  const minP = Math.min(...paces), maxP = Math.max(...paces);
+  const splitsRows = splits.map(s => {
+    const paceVal = s.average_speed > 0 ? 1000/s.average_speed : 999;
+    const barW = Math.round(40 * (maxP - paceVal) / (maxP - minP + 0.01) + 8);
+    const elev = s.elevation_difference;
+    const elevStr = elev >= 0 ? `+${Math.round(elev)}m` : `${Math.round(elev)}m`;
+    const elevColor = elev > 2 ? 'rgba(255,100,100,0.7)' : elev < -2 ? 'rgba(100,200,100,0.7)' : 'rgba(255,255,255,0.3)';
+    return `<tr>
+      <td>km ${s.split}</td>
+      <td><div class="pace-bar-wrap"><div class="pace-bar" style="width:${barW}px"></div><span class="pace-val">${fPace(s.average_speed)}</span></div></td>
+      <td style="color:${elevColor}">${elevStr}</td>
+      <td>${s.average_heartrate ? Math.round(s.average_heartrate) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const splitsCard = `<div class="section-card">
+    <div class="section-title">Km splits</div>
+    <table class="splits-table">
+      <thead><tr><th>Split</th><th style="text-align:right">Pace</th><th style="text-align:right">Elev</th><th style="text-align:right">HR</th></tr></thead>
+      <tbody>${splitsRows}</tbody>
+    </table>
+  </div>`;
+
+  // Best efforts
+  const efforts = (a.best_efforts || []).filter(e => ['400m','1K','1 mile','2 mile','5K','10K'].includes(e.name));
+  const effortsCard = `<div class="section-card">
+    <div class="section-title">Best efforts</div>
+    <div class="efforts-grid">${efforts.length ? efforts.map(e => `
+      <div class="effort-item">
+        <span class="effort-name">${e.name}</span>
+        <span class="effort-time">${fShortTime(e.elapsed_time)}</span>
+      </div>`).join('') : '<div style="font-size:12px;color:rgba(255,255,255,0.2)">None recorded</div>'}
+    </div>
+  </div>`;
+
+  // Segments
+  const segs = (a.segment_efforts || []).slice(0, 6);
+  const segsCard = `<div class="section-card">
+    <div class="section-title">Segments</div>
+    ${segs.length ? segs.map(s => {
+      const pr = s.pr_rank;
+      const prLabel = pr === 1 ? '🥇 PR' : pr === 2 ? '🥈 2nd' : pr === 3 ? '🥉 3rd' : fShortTime(s.elapsed_time);
+      const prClass = pr === 1 ? 'pr-1' : pr === 2 ? 'pr-2' : pr === 3 ? 'pr-3' : 'pr-none';
+      return `<div class="segment-item"><span class="segment-name">${s.name}</span><span class="segment-pr ${prClass}">${prLabel}</span></div>`;
+    }).join('') : '<div style="font-size:12px;color:rgba(255,255,255,0.2)">No segments</div>'}
+  </div>`;
+
+  // Charts
+  const hrCard = hr ? `<div class="chart-card"><div class="chart-label">Heart rate (bpm)</div><div style="position:relative;height:130px"><canvas id="hrCanvas"></canvas></div></div>` : '';
+  const altCard = alt ? `<div class="chart-card"><div class="chart-label">Elevation (m)</div><div style="position:relative;height:100px"><canvas id="altCanvas"></canvas></div></div>` : '';
+
+  document.getElementById('detailArea').innerHTML = `
+    ${topStats}${metaRow}
+    <div class="detail-cols">
+      <div class="detail-col">${splitsCard}${effortsCard}</div>
+      <div class="detail-col">${segsCard}${hrCard}${altCard}</div>
     </div>`;
 
-  const hrSection = hr ? `
-    <div class="chart-card full-width">
-      <div class="chart-label">Heart rate (bpm)</div>
-      <div style="position:relative;height:140px"><canvas id="hrCanvas" role="img" aria-label="Heart rate over distance"></canvas></div>
-    </div>` : `<div class="chart-card full-width"><div class="no-hr">No heart rate data for this activity</div></div>`;
-
-  const altSection = alt ? `
-    <div class="chart-card full-width">
-      <div class="chart-label">Elevation (m)</div>
-      <div style="position:relative;height:100px"><canvas id="altCanvas" role="img" aria-label="Elevation profile"></canvas></div>
-    </div>` : '';
-
-  chartsArea.innerHTML = detailStats + hrSection + altSection;
-
-  const tick = { color: 'rgba(255,255,255,0.3)', font: { size: 11, family: 'DM Sans' } };
+  const tick = { color: 'rgba(255,255,255,0.3)', font: { size: 10, family: 'DM Sans' } };
   const grid = { color: 'rgba(255,255,255,0.05)' };
-  const skip = { autoSkip: true, maxTicksLimit: 8 };
+  const skip = { autoSkip: true, maxTicksLimit: 6 };
 
-  if (hr) {
-    hrChart = new Chart(document.getElementById('hrCanvas'), {
-      type: 'line',
-      data: {
-        labels: distKm,
-        datasets: [{
-          data: hr,
-          borderColor: '#a78bfa',
-          backgroundColor: 'rgba(167,139,250,0.1)',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + ' bpm', title: t => t[0].label + ' ' + xLabel } } },
-        scales: {
-          x: { ticks: { ...tick, ...skip }, grid },
-          y: { min: 50, ticks: { ...tick, callback: v => v + ' bpm' }, grid }
-        }
-      }
-    });
-  }
+  if (hr) hrChart = new Chart(document.getElementById('hrCanvas'), {
+    type: 'line',
+    data: { labels: distKm, datasets: [{ data: hr, borderColor: '#ff8c42', backgroundColor: 'rgba(255,140,66,0.1)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + ' bpm' } } }, scales: { x: { ticks: { ...tick, ...skip }, grid }, y: { min: 50, ticks: { ...tick, callback: v => v + ' bpm' }, grid } } }
+  });
 
-  if (alt) {
-    altChart = new Chart(document.getElementById('altCanvas'), {
-      type: 'line',
-      data: {
-        labels: distKm,
-        datasets: [{
-          data: alt,
-          borderColor: '#a78bfa',
-          backgroundColor: 'rgba(167,139,250,0.06)',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + 'm', title: t => t[0].label + ' ' + xLabel } } },
-        scales: {
-          x: { ticks: { ...tick, ...skip }, grid },
-          y: { ticks: { ...tick, callback: v => v + 'm' }, grid }
-        }
-      }
-    });
-  }
+  if (alt) altChart = new Chart(document.getElementById('altCanvas'), {
+    type: 'line',
+    data: { labels: distKm, datasets: [{ data: alt, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + 'm' } } }, scales: { x: { ticks: { ...tick, ...skip }, grid }, y: { ticks: { ...tick, callback: v => v + 'm' }, grid } } }
+  });
 }
 
 loadActivities();
 </script>
-
-<footer class="site-footer">
-  Jason Richards © 2026 &nbsp;·&nbsp; Daventry, UK
-</footer>
-
 </body>
 </html>
