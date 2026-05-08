@@ -4,97 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Running Log — jprbuilds</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root {
-    --gold: #c9a96e;
-    --gold-dim: rgba(201,169,110,0.15);
-    --bg: #0f0e0c;
-    --bg2: #161512;
-    --bg3: #1d1b17;
-    --border: rgba(201,169,110,0.2);
-    --text: #e8e0d0;
-    --text-muted: #8a8070;
-    --text-dim: #5a5248;
-    --font-display: 'DM Serif Display', serif;
-    --font-body: 'DM Sans', sans-serif;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 15px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
-
-  a { color: var(--gold); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: baseline;
-    gap: 1.5rem;
-  }
-
-  header .site-name {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    color: var(--text-muted);
-  }
-
-  header .site-name a { color: var(--text-muted); }
-  header .site-name a:hover { color: var(--gold); text-decoration: none; }
-
-  header h1 {
-    font-family: var(--font-display);
-    font-size: 1.6rem;
-    font-weight: 400;
-    color: var(--text);
-  }
-
-  header .strava-badge {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
-  header .strava-badge span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #fc4c02;
-    display: inline-block;
-  }
-
   .layout {
     display: grid;
-    grid-template-columns: 340px 1fr;
-    min-height: calc(100vh - 73px);
+    grid-template-columns: 320px 1fr;
+    min-height: calc(100vh - 70px);
+    max-width: 100%;
   }
 
   .sidebar {
-    border-right: 1px solid var(--border);
+    border-right: 1px solid rgba(255,255,255,0.07);
     display: flex;
     flex-direction: column;
   }
 
   .stats-bar {
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
@@ -103,16 +33,16 @@
   .stat-item { text-align: center; }
 
   .stat-item .val {
-    font-family: var(--font-display);
+    font-family: 'DM Serif Display', serif;
     font-size: 1.4rem;
-    color: var(--gold);
+    color: #a78bfa;
     display: block;
     line-height: 1.2;
   }
 
   .stat-item .lbl {
     font-size: 11px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.3);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -122,7 +52,7 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-dim);
+    color: rgba(255,255,255,0.2);
   }
 
   .activities-list {
@@ -132,22 +62,29 @@
 
   .activity-item {
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(201,169,110,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, border-color 0.25s;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 4px;
     align-items: start;
   }
 
-  .activity-item:hover { background: var(--bg2); }
-  .activity-item.active { background: var(--gold-dim); border-left: 2px solid var(--gold); }
+  .activity-item:hover {
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid rgba(167,139,250,0.3);
+  }
+
+  .activity-item.active {
+    background: rgba(167,139,250,0.08);
+    border-left: 2px solid #a78bfa;
+  }
 
   .activity-name {
     font-size: 14px;
     font-weight: 500;
-    color: var(--text);
+    color: rgba(255,255,255,0.85);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -155,20 +92,20 @@
 
   .activity-meta {
     font-size: 12px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.3);
     margin-top: 2px;
   }
 
   .activity-dist {
-    font-family: var(--font-display);
+    font-family: 'DM Serif Display', serif;
     font-size: 1.1rem;
-    color: var(--gold);
+    color: #a78bfa;
     text-align: right;
   }
 
   .activity-time {
     font-size: 11px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.3);
     text-align: right;
   }
 
@@ -192,35 +129,32 @@
   .map-container {
     position: relative;
     height: 420px;
-    background: var(--bg2);
+    background: rgba(255,255,255,0.02);
   }
 
-  #map {
-    width: 100%;
-    height: 100%;
-  }
+  #map { width: 100%; height: 100%; }
 
   .map-overlay {
     position: absolute;
     top: 12px;
     left: 12px;
     z-index: 999;
-    background: rgba(15,14,12,0.88);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    background: rgba(26,24,51,0.92);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
     padding: 10px 14px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
   }
 
   .map-overlay .activity-title {
-    font-family: var(--font-display);
+    font-family: 'DM Serif Display', serif;
     font-size: 1.1rem;
-    color: var(--text);
+    color: rgba(255,255,255,0.9);
   }
 
   .map-overlay .activity-subtitle {
     font-size: 12px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.4);
     margin-top: 2px;
   }
 
@@ -229,20 +163,21 @@
     bottom: 12px;
     right: 12px;
     z-index: 999;
-    background: rgba(15,14,12,0.88);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    background: rgba(26,24,51,0.92);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
     padding: 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 4px;
+    backdrop-filter: blur(8px);
   }
 
   .hr-legend-title {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-dim);
+    color: rgba(255,255,255,0.25);
     margin-bottom: 2px;
   }
 
@@ -251,14 +186,10 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.45);
   }
 
-  .hr-legend-swatch {
-    width: 20px;
-    height: 4px;
-    border-radius: 2px;
-  }
+  .hr-legend-swatch { width: 20px; height: 4px; border-radius: 2px; }
 
   .charts-area {
     flex: 1;
@@ -270,19 +201,21 @@
   }
 
   .chart-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
     padding: 1rem 1.25rem;
+    transition: border-color 0.25s;
   }
 
+  .chart-card:hover { border-color: rgba(167,139,250,0.4); }
   .chart-card.full-width { grid-column: 1 / -1; }
 
   .chart-label {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.3);
     margin-bottom: 10px;
   }
 
@@ -291,7 +224,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.3);
     font-size: 13px;
     gap: 8px;
   }
@@ -299,8 +232,8 @@
   .spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--gold);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: #a78bfa;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -312,7 +245,7 @@
     align-items: center;
     justify-content: center;
     height: 120px;
-    color: var(--text-dim);
+    color: rgba(255,255,255,0.2);
     font-size: 13px;
     font-style: italic;
   }
@@ -325,29 +258,49 @@
   }
 
   .detail-stat {
-    background: var(--bg3);
-    border-radius: 6px;
-    padding: 10px 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 10px 14px;
+    transition: border-color 0.25s;
   }
 
+  .detail-stat:hover { border-color: rgba(167,139,250,0.4); }
+
   .detail-stat .d-val {
-    font-family: var(--font-display);
+    font-family: 'DM Serif Display', serif;
     font-size: 1.3rem;
-    color: var(--gold);
+    color: #a78bfa;
   }
 
   .detail-stat .d-lbl {
     font-size: 11px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.3);
     margin-top: 2px;
   }
 
-  .leaflet-container { background: var(--bg2) !important; }
-  .leaflet-tile { filter: brightness(0.7) saturate(0.4); }
+  .strava-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.25);
+  }
+
+  .strava-badge span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fc4c02;
+    display: inline-block;
+  }
+
+  .leaflet-container { background: #1a1833 !important; }
+  .leaflet-tile { filter: brightness(0.55) saturate(0.3) hue-rotate(200deg); }
 
   @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; }
-    .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 320px; }
+    .sidebar { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); max-height: 320px; }
     .charts-area { grid-template-columns: 1fr; }
     .detail-stats { grid-template-columns: repeat(2, 1fr); }
   }
@@ -355,11 +308,14 @@
 </head>
 <body>
 
-<header>
-  <div class="site-name"><a href="/">jprbuilds.com</a></div>
-  <h1>Running Log</h1>
+<nav class="site-nav">
+  <img src="/Logos/jprbuilds-logo-navbar.svg" alt="JPRBuilds" height="50" />
   <div class="strava-badge"><span></span> via Strava</div>
-</header>
+</nav>
+
+<div style="max-width:960px; margin: 0 auto; padding: 2rem 1.5rem 0.5rem;">
+  <h1>Running <em class="accent">Log</em></h1>
+</div>
 
 <div class="layout">
   <aside class="sidebar">
@@ -555,8 +511,8 @@ function renderCharts(activity, hr, alt, dist, time) {
 
   chartsArea.innerHTML = detailStats + hrSection + altSection;
 
-  const tick = { color: '#5a5248', font: { size: 11, family: 'DM Sans' } };
-  const grid = { color: 'rgba(201,169,110,0.08)' };
+  const tick = { color: 'rgba(255,255,255,0.3)', font: { size: 11, family: 'DM Sans' } };
+  const grid = { color: 'rgba(255,255,255,0.05)' };
   const skip = { autoSkip: true, maxTicksLimit: 8 };
 
   if (hr) {
@@ -566,8 +522,8 @@ function renderCharts(activity, hr, alt, dist, time) {
         labels: distKm,
         datasets: [{
           data: hr,
-          borderColor: '#ff8c42',
-          backgroundColor: 'rgba(255,140,66,0.1)',
+          borderColor: '#a78bfa',
+          backgroundColor: 'rgba(167,139,250,0.1)',
           borderWidth: 2,
           pointRadius: 0,
           fill: true,
@@ -593,8 +549,8 @@ function renderCharts(activity, hr, alt, dist, time) {
         labels: distKm,
         datasets: [{
           data: alt,
-          borderColor: '#c9a96e',
-          backgroundColor: 'rgba(201,169,110,0.08)',
+          borderColor: '#a78bfa',
+          backgroundColor: 'rgba(167,139,250,0.06)',
           borderWidth: 1.5,
           pointRadius: 0,
           fill: true,
@@ -616,5 +572,10 @@ function renderCharts(activity, hr, alt, dist, time) {
 
 loadActivities();
 </script>
+
+<footer class="site-footer">
+  Jason Richards © 2026 &nbsp;·&nbsp; Daventry, UK
+</footer>
+
 </body>
-</html>pbpaste > ~/Sites/jprbuilds-site/strava/index.html
+</html>
