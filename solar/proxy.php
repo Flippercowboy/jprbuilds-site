@@ -117,7 +117,7 @@ function getSolisStates() {
         'sensor.solis_battery_power'                  => ['state' => ($d['batteryPower'] ?? 0) * $kw,                                                 'unit' => 'W'],
         'sensor.solis_remaining_battery_capacity'     => ['state' => $d['battery_capacity_soc'] ?? $d['batteryCapacitySoc'] ?? 0,                    'unit' => '%'],
         'sensor.solis_battery_voltage'                => ['state' => $d['battery_voltage'] ?? $d['batteryVoltage'] ?? 0,                             'unit' => 'V'],
-        'sensor.solis_battery_current'                => ['state' => $d['bsttery_current'] ?? $d['batteryCurrent'] ?? 0,                             'unit' => 'A'],
+        'sensor.solis_battery_current'                => ['state' => $d['bstteryCurrent'] ?? $d['bsttery_current'] ?? $d['batteryCurrent'] ?? 0,    'unit' => 'A'],
         'sensor.solis_battery_state_of_health'        => ['state' => $d['battery_health_soh'] ?? $d['batteryHealthSoh'] ?? $d['bmsSOH'] ?? $d['battery_soh'] ?? 0, 'unit' => '%'],
         'sensor.solis_power_grid_total_power'         => ['state' => ($d['psum'] ?? 0) * $kw,                                                        'unit' => 'W'],
         'sensor.solis_total_consumption_power'        => ['state' => ($d['total_load_power'] ?? $d['familyLoadPower'] ?? 0) * $kw,                   'unit' => 'W'],
@@ -146,6 +146,12 @@ function getSolisStates() {
         'sensor.solis_dc_voltage_pv2'                 => ['state' => $d['uPv2'] ?? $d['u_pv2'] ?? 0,                                                'unit' => 'V'],
         'sensor.solis_dc_current_pv2'                 => ['state' => $d['iPv2'] ?? $d['i_pv2'] ?? 0,                                                'unit' => 'A'],
         'sensor.solis_dc_power_pv2'                   => ['state' => $d['pow2'] ?? 0,                                                                'unit' => 'W'],
+        'sensor.solis_force_charge_soc'               => ['state' => $d['socChargingSet'] ?? 0,                                                     'unit' => '%'],
+        'sensor.solis_force_discharge_soc'            => ['state' => $d['socDischargeSet'] ?? 0,                                                    'unit' => '%'],
+        'sensor.solis_grid_phase1_power'              => ['state' => ($d['pA'] ?? 0) * $kw,                                                         'unit' => 'W'],
+        'sensor.solis_meter_item_a_volt'              => ['state' => $d['uA'] ?? 0,                                                                 'unit' => 'V'],
+        'sensor.solis_meter_item_a_current'           => ['state' => $d['iA'] ?? 0,                                                                 'unit' => 'A'],
+        'sensor.solis_backup_load_power'              => ['state' => ($d['bypassLoadPower'] ?? 0) * $kw,                                            'unit' => 'W'],
         'sensor.best_solar_month'                     => ['state' => 0,                                                                               'unit' => 'kWh'],
     ];
 
