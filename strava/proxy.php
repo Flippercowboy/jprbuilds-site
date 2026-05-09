@@ -4,7 +4,7 @@ require_once __DIR__ . '/config.php';
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-$cache_dir = sys_get_temp_dir() . '/strava_cache';
+$cache_dir = '/var/www/html/strava/cache';
 if (!is_dir($cache_dir)) mkdir($cache_dir, 0755, true);
 
 $action = $_GET['action'] ?? 'activities';
@@ -34,7 +34,6 @@ function strava_get($endpoint, $token) {
     return $r ? json_decode($r, true) : null;
 }
 
-// ── Activity list with incremental cache ─────────────────────────────────────
 if ($action === 'activities') {
     $cache_file = $cache_dir . '/activities.json';
     $cached = file_exists($cache_file) ? json_decode(file_get_contents($cache_file), true) : [];
@@ -51,7 +50,11 @@ if ($action === 'activities') {
     $token = get_access_token();
     if (!$token) { http_response_code(500); echo json_encode(['error' => 'Token error']); exit; }
 
-    $new = strava_get('athlete/activities?per_page=50&after=' . $after, $token) ?? [];
+    $url = $after > 0
+        ? 'athlete/activities?per_page=50&after=' . $after
+        : 'athlete/activities?per_page=50';
+
+    $new = strava_get($url, $token) ?? [];
     $new_runs = array_filter($new, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun']));
 
     if (!empty($new_runs)) {
@@ -61,64 +64,38 @@ if ($action === 'activities') {
         uasort($indexed, fn($a, $b) => strtotime($b['start_date']) - strtotime($a['start_date']));
         $cached = array_values($indexed);
         file_put_contents($cache_file, json_encode($cached));
+    } else if (empty($cached)) {
+        echo json_encode([]);
+        exit;
     }
 
     echo json_encode($cached);
     exit;
 }
 
-// ── Single activity detail — cached forever ───────────────────────────────────
 if ($action === 'activity') {
     $id = intval($_GET['id'] ?? 0);
     if (!$id) { http_response_code(400); echo json_encode(['error' => 'Missing id']); exit; }
-
     $cache_file = $cache_dir . '/activity_' . $id . '.json';
     if (file_exists($cache_file)) { echo file_get_contents($cache_file); exit; }
-
     $token = get_access_token();
     if (!$token) { http_response_code(500); echo json_encode(['error' => 'Token error']); exit; }
-
     $data = strava_get('activities/' . $id, $token);
     if (!$data) { http_response_code(500); echo json_encode(['error' => 'Strava error']); exit; }
-
     file_put_contents($cache_file, json_encode($data));
     echo json_encode($data);
     exit;
 }
 
-// ── Streams — cached forever ──────────────────────────────────────────────────
 if ($action === 'streams') {
     $id = intval($_GET['id'] ?? 0);
     if (!$id) { http_response_code(400); echo json_encode(['error' => 'Missing id']); exit; }
-
     $cache_file = $cache_dir . '/streams_' . $id . '.json';
     if (file_exists($cache_file)) { echo file_get_contents($cache_file); exit; }
-
     $token = get_access_token();
     if (!$token) { http_response_code(500); echo json_encode(['error' => 'Token error']); exit; }
-
     $data = strava_get('activities/' . $id . '/streams?keys=time,latlng,heartrate,altitude,distance,cadence,velocity_smooth&key_by_type=true', $token);
     if (!$data) { http_response_code(500); echo json_encode(['error' => 'Strava error']); exit; }
-
-    file_put_contents($cache_file, json_encode($data));
-    echo json_encode($data);
-    exit;
-}
-
-// ── Athlete stats — cached 1 hour ─────────────────────────────────────────────
-if ($action === 'stats') {
-    $cache_file = $cache_dir . '/athlete_stats.json';
-    if (file_exists($cache_file) && (time() - filemtime($cache_file)) < 3600) {
-        echo file_get_contents($cache_file);
-        exit;
-    }
-
-    $token = get_access_token();
-    if (!$token) { http_response_code(500); echo json_encode(['error' => 'Token error']); exit; }
-
-    $data = strava_get('athletes/' . STRAVA_ATHLETE_ID . '/stats', $token);
-    if (!$data) { http_response_code(500); echo json_encode(['error' => 'Strava error']); exit; }
-
     file_put_contents($cache_file, json_encode($data));
     echo json_encode($data);
     exit;
