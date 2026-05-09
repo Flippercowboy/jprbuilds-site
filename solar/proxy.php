@@ -25,6 +25,7 @@ switch ($action) {
     case 'states':   echo json_encode(getSolisStates());     break;
     case 'forecast': echo json_encode(getSolcastForecast()); break;
     case 'monthly':  echo json_encode(getSolisMonthly());    break;
+    case 'debug':    echo json_encode(getSolisRawDetail());  break;
     default:         echo json_encode(['error' => 'Unknown action']); break;
 }
 
@@ -117,14 +118,14 @@ function getSolisStates() {
         'sensor.solis_remaining_battery_capacity'     => ['state' => $d['battery_capacity_soc'] ?? $d['batteryCapacitySoc'] ?? 0,                    'unit' => '%'],
         'sensor.solis_battery_voltage'                => ['state' => $d['battery_voltage'] ?? $d['batteryVoltage'] ?? 0,                             'unit' => 'V'],
         'sensor.solis_battery_current'                => ['state' => $d['bsttery_current'] ?? $d['batteryCurrent'] ?? 0,                             'unit' => 'A'],
-        'sensor.solis_battery_state_of_health'        => ['state' => $d['battery_health_soh'] ?? 0,                                                  'unit' => '%'],
+        'sensor.solis_battery_state_of_health'        => ['state' => $d['battery_health_soh'] ?? $d['batteryHealthSoh'] ?? $d['bmsSOH'] ?? $d['battery_soh'] ?? 0, 'unit' => '%'],
         'sensor.solis_power_grid_total_power'         => ['state' => ($d['psum'] ?? 0) * $kw,                                                        'unit' => 'W'],
         'sensor.solis_total_consumption_power'        => ['state' => ($d['total_load_power'] ?? $d['familyLoadPower'] ?? 0) * $kw,                   'unit' => 'W'],
         'sensor.solis_plant_total_consumption_power'  => ['state' => ($d['total_load_power'] ?? $d['totalLoadPower'] ?? 0) * $kw,                    'unit' => 'W'],
         'sensor.solis_temperature'                    => ['state' => $d['inverterTemperature'] ?? 0,                                                  'unit' => '°C'],
         'sensor.solis_ac_voltage_r'                   => ['state' => $d['uAc1'] ?? $d['u_ac1'] ?? 0,                                                 'unit' => 'V'],
         'sensor.solis_ac_current_r'                   => ['state' => $d['iAc1'] ?? $d['i_ac1'] ?? 0,                                                 'unit' => 'A'],
-        'sensor.solis_ac_frequency'                   => ['state' => $d['fAc'] ?? $d['f_ac'] ?? 0,                                                   'unit' => 'Hz'],
+        'sensor.solis_ac_frequency'                   => ['state' => $d['fac'] ?? $d['fAc'] ?? $d['f_ac'] ?? $d['fAC'] ?? 0,                       'unit' => 'Hz'],
         'sensor.solis_daily_on_grid_energy'           => ['state' => $d['gridSellTodayEnergy'] ?? 0,                                                 'unit' => 'kWh'],
         'sensor.solis_daily_grid_energy_purchased'    => ['state' => $d['gridPurchasedTodayEnergy'] ?? 0,                                            'unit' => 'kWh'],
         'sensor.solis_daily_energy_charged'           => ['state' => $d['battery_today_charge_energy'] ?? $d['batteryTodayChargeEnergy'] ?? 0,       'unit' => 'kWh'],
@@ -159,6 +160,17 @@ function getSolisStates() {
 
     file_put_contents($cacheFile, json_encode($haFormat));
     return $haFormat;
+}
+
+// ─────────────────────────────────────────
+//  DEBUG: RAW INVERTER DETAIL KEYS
+// ─────────────────────────────────────────
+function getSolisRawDetail() {
+    $inverters = solisRequest('/v1/api/inverterList', ['pageNo' => 1, 'pageSize' => 10]);
+    if (empty($inverters['data']['page']['records'])) return ['error' => 'No inverters'];
+    $inv    = $inverters['data']['page']['records'][0];
+    $detail = solisRequest('/v1/api/inverterDetail', ['id' => $inv['id'], 'sn' => $inv['sn']]);
+    return $detail['data'] ?? ['error' => 'No data'];
 }
 
 // ─────────────────────────────────────────
