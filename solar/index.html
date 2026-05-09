@@ -508,8 +508,8 @@
     </div>
     <div class="section">
       <div class="chart-card">
-        <h3>📈 Yearly Overview</h3>
-        <div style="position:relative;height:240px"><canvas id="yearly-chart"></canvas></div>
+        <h3>📊 Lifetime Breakdown</h3>
+        <div style="position:relative;height:200px"><canvas id="yearly-chart"></canvas></div>
       </div>
     </div>
   </div><!-- /tab-totals -->
@@ -893,26 +893,32 @@ function renderMonthlyFallback() {
 function renderYearlyChart() {
   const ctx = document.getElementById('yearly-chart').getContext('2d');
   if (yearlyChartInstance) yearlyChartInstance.destroy();
-  const yr    = num('sensor.solis_energy_this_year');
-  const total = num('sensor.solis_energy_total');
-  const prevYrs = Math.max(0, total - yr);
+  const totalGen = num('sensor.solis_energy_total');
+  const totalExp = num('sensor.solis_total_on_grid_energy');
+  const totalImp = num('sensor.solis_total_energy_purchased');
+  const selfUsed = Math.max(0, totalGen - totalExp);
   yearlyChartInstance = new Chart(ctx, {
-    type: 'doughnut',
+    type: 'bar',
     data: {
-      labels: ['This Year', 'Previous Years'],
+      labels: ['Generated', 'Self-Used', 'Exported', 'Imported'],
       datasets: [{
-        data: [yr, prevYrs],
-        backgroundColor: ['rgba(244,132,95,0.8)', 'rgba(255,255,255,0.08)'],
-        borderColor:     ['#f4845f', 'rgba(255,255,255,0.1)'],
-        borderWidth: 2,
+        data: [totalGen, selfUsed, totalExp, totalImp],
+        backgroundColor: ['rgba(244,132,95,0.75)', 'rgba(34,197,94,0.7)', 'rgba(167,139,250,0.7)', 'rgba(102,126,234,0.7)'],
+        borderColor:     ['#f4845f', '#22c55e', '#a78bfa', '#667eea'],
+        borderWidth: 1,
+        borderRadius: 6,
       }]
     },
     options: {
+      indexAxis: 'y',
       responsive: true, maintainAspectRatio: false,
-      cutout: '68%',
       plugins: {
-        legend: { labels: { color: 'rgba(255,255,255,0.4)' } },
-        tooltip: { callbacks: { label: ctx => ` ${fmtN(ctx.raw, 0)} kWh` } }
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${fmtN(c.raw, 0)} kWh` } }
+      },
+      scales: {
+        x: { ticks: { color: 'rgba(255,255,255,0.4)', callback: v => `${(v/1000).toFixed(1)}k` }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
       }
     }
   });
