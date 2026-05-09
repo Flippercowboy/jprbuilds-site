@@ -134,9 +134,9 @@ function getSolisStates() {
         'sensor.solis_monthly_energy_charged'         => ['state' => $d['batteryMonthChargeEnergy'] ?? 0,                                            'unit' => 'kWh'],
         'sensor.solis_monthly_energy_discharged'      => ['state' => $d['batteryMonthDischargeEnergy'] ?? 0,                                         'unit' => 'kWh'],
         'sensor.solis_yearly_on_grid_energy'          => ['state' => $d['gridSellYearEnergy'] ?? 0,                                                  'unit' => 'kWh'],
-        'sensor.solis_yearly_grid_energy_purchased'   => ['state' => ($d['gridPurchasedYearEnergy'] ?? 0) * $kw,                                     'unit' => 'kWh'],
-        'sensor.solis_total_on_grid_energy'           => ['state' => ($d['gridSellTotalEnergy'] ?? 0) * $kw,                                         'unit' => 'kWh'],
-        'sensor.solis_total_energy_purchased'         => ['state' => ($d['gridPurchasedTotalEnergy'] ?? 0) * $kw,                                    'unit' => 'kWh'],
+        'sensor.solis_yearly_grid_energy_purchased'   => ['state' => $d['gridPurchasedYearEnergy'] ?? 0,                                              'unit' => 'kWh'],
+        'sensor.solis_total_on_grid_energy'           => ['state' => $d['gridSellTotalEnergy'] ?? 0,                                                 'unit' => 'kWh'],
+        'sensor.solis_total_energy_purchased'         => ['state' => $d['gridPurchasedTotalEnergy'] ?? 0,                                            'unit' => 'kWh'],
         'sensor.solis_total_energy_charged'           => ['state' => $d['battery_total_charge_energy'] ?? $d['batteryTotalChargeEnergy'] ?? 0,       'unit' => 'kWh'],
         'sensor.solis_total_energy_discharged'        => ['state' => $d['battery_total_discharge_energy'] ?? $d['batteryTotalDischargeEnergy'] ?? 0, 'unit' => 'kWh'],
         'sensor.solis_dc_voltage_pv1'                 => ['state' => $d['uPv1'] ?? $d['u_pv1'] ?? 0,                                                'unit' => 'V'],
@@ -211,7 +211,7 @@ function getSolisMonthly() {
         $month = date('Y-m', $ts);
         $label = date('M y', $ts);
 
-        usleep
+        usleep(200000);
         $res  = solisRequest('/v1/api/inverterMonth', [
             'id'    => $inverterId,
             'sn'    => $inverterSn,

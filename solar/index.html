@@ -826,7 +826,7 @@ async function loadMonthlyStats() {
     const labels  = months.map(m => m.label).reverse();
     const genVals = months.map(m => parseFloat(m.data.energy ?? m.data.generationValue ?? 0)).reverse();
     const expVals = months.map(m => parseFloat(m.data.gridSellEnergy ?? 0)).reverse();
-    const impVals = months.map(m => parseFloat(m.data.gridBuyEnergy ?? 0)).reverse();
+    const impVals = months.map(m => parseFloat(m.data.gridPurchasedEnergy ?? 0)).reverse();
     renderMonthlyChart(labels, genVals, expVals, impVals);
     renderMonthlyTable(labels, genVals, expVals, impVals);
     monthlyDataLoaded = true;
