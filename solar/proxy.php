@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-set_time_limit(120)
+set_time_limit(120);
 // ── Solis Cloud API credentials ──
 define('SOLIS_KEY_ID',     '1300386381676683008');
 define('SOLIS_KEY_SECRET', '6d8bf199d09149bea5339f219347b372');
