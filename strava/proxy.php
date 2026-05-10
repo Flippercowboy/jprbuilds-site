@@ -129,11 +129,14 @@ if ($action === 'weather') {
     $hour  = intval(substr($local, 11, 2));
 
     $days_ago = (time() - strtotime($date)) / 86400;
-    if ($days_ago > 7) {
+    $target   = substr($local, 0, 13) . ':00'; // e.g. "2026-05-09T09:00"
+
+    if ($days_ago > 5) {
+        // Archive API: returns exactly 24 entries for the requested day
         $api_url = "https://archive-api.open-meteo.com/v1/archive?latitude={$lat}&longitude={$lng}&start_date={$date}&end_date={$date}&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,windspeed_10m,winddirection_10m,weathercode&timezone=auto";
     } else {
-        $pd = max(1, ceil($days_ago) + 1);
-        $api_url = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lng}&start_date={$date}&end_date={$date}&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,windspeed_10m,winddirection_10m,weathercode&past_days={$pd}&timezone=auto";
+        // Forecast API: past_days alone (no start/end date — they conflict), search by timestamp
+        $api_url = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lng}&past_days=7&forecast_days=1&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,windspeed_10m,winddirection_10m,weathercode&timezone=auto";
     }
 
     $ch = curl_init($api_url);
@@ -150,13 +153,21 @@ if ($action === 'weather') {
     $h  = $wd['hourly'] ?? [];
     if (empty($h['time'])) { echo json_encode(['error' => 'no_data']); exit; }
 
+    // Find the correct hour index
+    if ($days_ago > 5) {
+        $idx = $hour; // Archive: 24 entries, index == hour
+    } else {
+        $idx = array_search($target, $h['time']);
+        if ($idx === false) { echo json_encode(['error' => 'no_time_match']); exit; }
+    }
+
     $result = [
-        'temperature'  => $h['temperature_2m'][$hour]      ?? null,
-        'feels_like'   => $h['apparent_temperature'][$hour] ?? null,
-        'humidity'     => $h['relativehumidity_2m'][$hour]  ?? null,
-        'wind_speed'   => $h['windspeed_10m'][$hour]        ?? null,
-        'wind_dir_deg' => $h['winddirection_10m'][$hour]    ?? null,
-        'weather_code' => $h['weathercode'][$hour]          ?? null,
+        'temperature'  => $h['temperature_2m'][$idx]      ?? null,
+        'feels_like'   => $h['apparent_temperature'][$idx] ?? null,
+        'humidity'     => $h['relativehumidity_2m'][$idx]  ?? null,
+        'wind_speed'   => $h['windspeed_10m'][$idx]        ?? null,
+        'wind_dir_deg' => $h['winddirection_10m'][$idx]    ?? null,
+        'weather_code' => $h['weathercode'][$idx]          ?? null,
     ];
 
     file_put_contents($weather_file, json_encode($result));
