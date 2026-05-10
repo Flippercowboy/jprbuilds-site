@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/db.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -35,41 +36,37 @@ function strava_get($endpoint, $token) {
 }
 
 if ($action === 'activities') {
-    $cache_file = $cache_dir . '/activities.json';
-    $cached = file_exists($cache_file) ? json_decode(file_get_contents($cache_file), true) : [];
+    try {
+        $pdo   = get_db();
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM strava_activities")->fetchColumn();
 
-    $after = 0;
-    if (!empty($cached)) {
-        $after = max(array_map(fn($a) => strtotime($a['start_date']), $cached));
-        if ((time() - filemtime($cache_file)) < 300) {
-            echo json_encode(array_values($cached));
-            exit;
+        // Throttle API calls to once every 5 minutes
+        $check_file = $cache_dir . '/activities_checked.txt';
+        $throttled  = file_exists($check_file) && (time() - filemtime($check_file)) < 300;
+
+        if (!$throttled) {
+            $token = get_access_token();
+            if ($token) {
+                if ($count === 0) {
+                    // DB empty (pre-backfill): grab a recent page so the page isn't blank
+                    $url = 'athlete/activities?per_page=200';
+                } else {
+                    $latest = $pdo->query("SELECT MAX(start_date) FROM strava_activities")->fetchColumn();
+                    $url    = 'athlete/activities?per_page=50&after=' . strtotime($latest);
+                }
+                $new      = strava_get($url, $token) ?? [];
+                $new_runs = array_filter($new, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun']));
+                if (!empty($new_runs)) db_upsert_activities($pdo, $new_runs);
+                file_put_contents($check_file, time());
+            }
         }
+
+        $rows = $pdo->query("SELECT * FROM strava_activities ORDER BY start_date DESC")->fetchAll();
+        echo json_encode(array_map('db_row_to_activity', $rows));
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'DB error: ' . $e->getMessage()]);
     }
-
-    $token = get_access_token();
-    if (!$token) { http_response_code(500); echo json_encode(['error' => 'Token error']); exit; }
-
-    $url = $after > 0
-        ? 'athlete/activities?per_page=50&after=' . $after
-        : 'athlete/activities?per_page=50';
-
-    $new = strava_get($url, $token) ?? [];
-    $new_runs = array_filter($new, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun']));
-
-    if (!empty($new_runs)) {
-        $indexed = [];
-        foreach ($cached as $a) $indexed[$a['id']] = $a;
-        foreach ($new_runs as $a) $indexed[$a['id']] = $a;
-        uasort($indexed, fn($a, $b) => strtotime($b['start_date']) - strtotime($a['start_date']));
-        $cached = array_values($indexed);
-        file_put_contents($cache_file, json_encode($cached));
-    } else if (empty($cached)) {
-        echo json_encode([]);
-        exit;
-    }
-
-    echo json_encode($cached);
     exit;
 }
 
