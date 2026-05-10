@@ -166,6 +166,7 @@
   .card-pills { display: flex; gap: 6px; flex-wrap: wrap; }
   .hr-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 8px; border-radius: 20px; }
   .hr-pill .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .parkrun-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 8px; border-radius: 20px; background: rgba(79,195,247,0.12); color: #4fc3f7; border: 1px solid rgba(79,195,247,0.25); }
 
   /* Loading */
   .loading { display: flex; align-items: center; justify-content: center; min-height: 200px; color: rgba(255,255,255,0.3); font-size: 13px; gap: 8px; }
@@ -413,8 +414,12 @@ function buildEffortBars(runs) {
 
 async function init() {
   try {
-    const res = await fetch(`${PROXY}?action=activities`);
+    const [res, prRes] = await Promise.all([
+      fetch(`${PROXY}?action=activities`),
+      fetch(`${PROXY}?action=parkrun_dates`)
+    ]);
     const runs = await res.json();
+    const parkrunDates = new Set(await prRes.json().catch(() => []));
     if (!Array.isArray(runs) || !runs.length) {
       document.getElementById('feed').innerHTML = '<div class="loading">No runs yet.</div>';
       return;
@@ -444,14 +449,17 @@ async function init() {
       const zone    = hrZone(a.average_heartrate);
       const svg     = routeSVG(a.map?.summary_polyline, 100, 72);
       const isRide  = a.type === 'Ride' || a.type === 'VirtualRide';
+      const isRun   = a.type === 'Run'  || a.type === 'VirtualRun';
       const thumb   = svg
         ? `<div class="card-thumb">${svg}</div>`
         : `<div class="card-thumb"><div class="thumb-placeholder">${isRide ? '🚴' : '🏃'}</div></div>`;
 
-      const dateObj = new Date(a.start_date_local);
-      const dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-      const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      const elev    = a.total_elevation_gain ? `${Math.round(a.total_elevation_gain)}m` : null;
+      const dateObj  = new Date(a.start_date_local);
+      const dateStr  = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      const timeStr  = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      const elev     = a.total_elevation_gain ? `${Math.round(a.total_elevation_gain)}m` : null;
+      const actDate  = `${dateObj.getFullYear()}-${(dateObj.getMonth()+1).toString().padStart(2,'0')}-${dateObj.getDate().toString().padStart(2,'0')}`;
+      const hasParkrun = isRun && parkrunDates.has(actDate);
 
       const card = document.createElement('a');
       card.className = 'activity-card';
@@ -471,6 +479,7 @@ async function init() {
           </div>
           <div class="card-pills">
             ${zone && a.average_heartrate ? `<div class="hr-pill" style="background:${zone.color}22;color:${zone.color}"><span class="dot" style="background:${zone.color}"></span>${Math.round(a.average_heartrate)} bpm · ${zone.label}</div>` : ''}
+            ${hasParkrun ? `<div class="parkrun-pill">🏃 parkrun</div>` : ''}
           </div>
         </div>`;
       feed.appendChild(card);

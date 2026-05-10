@@ -201,5 +201,36 @@ if ($action === 'similar') {
     exit;
 }
 
+if ($action === 'parkrun') {
+    $date = $_GET['date'] ?? '';
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        http_response_code(400); echo json_encode(['error' => 'Invalid date']); exit;
+    }
+    try {
+        $pdo  = get_db();
+        $stmt = $pdo->prepare("SELECT * FROM parkrun_results WHERE run_date = ?");
+        $stmt->execute([$date]);
+        $row  = $stmt->fetch();
+        if ($row) {
+            $row['id']             = (int)$row['id'];
+            $row['event_number']   = (int)$row['event_number'];
+            $row['finish_seconds'] = (int)$row['finish_seconds'];
+            $row['position']       = $row['position']     !== null ? (int)$row['position']     : null;
+            $row['parkrun_count']  = $row['parkrun_count'] !== null ? (int)$row['parkrun_count'] : null;
+        }
+        echo json_encode($row ?: null);
+    } catch (Exception $e) { echo json_encode(null); }
+    exit;
+}
+
+if ($action === 'parkrun_dates') {
+    try {
+        $pdo  = get_db();
+        $rows = $pdo->query("SELECT run_date FROM parkrun_results ORDER BY run_date")->fetchAll(PDO::FETCH_COLUMN);
+        echo json_encode($rows);
+    } catch (Exception $e) { echo json_encode([]); }
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'Unknown action']);

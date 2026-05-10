@@ -30,6 +30,9 @@
 
   .meta-section { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.875rem 1.75rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
   .weather-strip { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 12px; color: rgba(255,255,255,0.55); }
+  .parkrun-strip { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 12px; color: rgba(255,255,255,0.55); }
+  .parkrun-time { font-family: 'DM Serif Display', serif; font-size: 1rem; color: #4fc3f7; font-weight: 400; }
+  .parkrun-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.3); margin-left: 2px; }
   .weather-temp { color: rgba(255,255,255,0.85); font-weight: 500; }
   .weather-sep { color: rgba(255,255,255,0.15); }
   .meta-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
@@ -246,7 +249,7 @@ function drawRoute(streams) {
 }
 
 // ── Main render ──────────────────────────────────────────────────────────────
-function renderDetail(a, streams, weather, similar) {
+function renderDetail(a, streams, weather, similar, parkrun) {
   [hrChart, altChart, paceChart].forEach(c => { if (c) c.destroy(); });
   hrChart = altChart = paceChart = null;
 
@@ -271,6 +274,23 @@ function renderDetail(a, streams, weather, similar) {
       ${weather.feels_like != null ? `<span style="font-size:11px;color:rgba(255,255,255,0.3)">feels like ${Math.round(weather.feels_like)}°C</span>` : ''}
       ${weather.humidity != null ? `<span class="weather-sep">·</span><span>💧 ${Math.round(weather.humidity)}%</span>` : ''}
       ${windStr ? `<span class="weather-sep">·</span><span>💨 ${windStr}</span>` : ''}
+    </div>`;
+  }
+
+  // ── parkrun ──
+  let parkrunHTML = '';
+  const isRun = a.type === 'Run' || a.type === 'VirtualRun';
+  if (isRun && parkrun && parkrun.finish_time) {
+    const nth = parkrun.parkrun_count ? `${parkrun.parkrun_count}${['th','st','nd','rd'][Math.min(parkrun.parkrun_count%10>3||Math.floor(parkrun.parkrun_count/10)%10===1?0:parkrun.parkrun_count%10,3)]} parkrun` : 'parkrun';
+    const posStr = parkrun.position ? ` · ${parkrun.position}${['th','st','nd','rd'][Math.min(parkrun.position%10>3||Math.floor(parkrun.position/10)%10===1?0:parkrun.position%10,3)]} place` : '';
+    parkrunHTML = `<div class="parkrun-strip">
+      <span>🏃</span>
+      <span style="color:rgba(255,255,255,0.7);font-weight:500">${parkrun.event_name} parkrun #${parkrun.event_number}</span>
+      <span class="weather-sep">·</span>
+      <span class="parkrun-time">${parkrun.finish_time}</span>
+      <span class="parkrun-label">official time</span>
+      <span class="weather-sep">·</span>
+      <span>${nth}${posStr}</span>
     </div>`;
   }
 
@@ -368,6 +388,7 @@ function renderDetail(a, streams, weather, similar) {
     </div>
     <div class="meta-section">
       ${weatherHTML}
+      ${parkrunHTML}
       <div class="meta-row">
         ${a.gear ? `<div class="meta-chip">👟 ${a.gear.name} · ${(a.gear.distance/1000).toFixed(0)}km on shoe</div>` : ''}
         ${a.device_name ? `<div class="meta-chip">📱 ${a.device_name}</div>` : ''}
@@ -461,8 +482,13 @@ if (!id) {
     const weatherRaw  = await wr.json().catch(() => ({}));
     const similar     = await simr.json().catch(() => []);
     const weather     = weatherRaw && !weatherRaw.error ? weatherRaw : null;
+    const isRunType   = activity.type === 'Run' || activity.type === 'VirtualRun';
+    const actDate     = (activity.start_date_local || '').slice(0, 10);
+    const parkrun     = isRunType && actDate
+      ? await fetch(`${PROXY}?action=parkrun&date=${actDate}`).then(r => r.json()).catch(() => null)
+      : null;
     document.title    = `${activity.name} — jprbuilds`;
-    renderDetail(activity, streams, weather, similar);
+    renderDetail(activity, streams, weather, similar, parkrun);
   }).catch(() => {
     document.getElementById('detailArea').innerHTML = '<div class="loading">Failed to load activity.</div>';
   });
