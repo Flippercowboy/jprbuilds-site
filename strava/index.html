@@ -148,6 +148,15 @@
   .leaflet-container { background: #1a1833 !important; }
   .leaflet-tile { filter: brightness(0.55) saturate(0.3) hue-rotate(200deg); }
 
+  .weather-strip {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.6rem 0.875rem;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px; font-size: 12px; color: rgba(255,255,255,0.55);
+  }
+  .weather-temp { color: rgba(255,255,255,0.85); font-weight: 500; }
+  .weather-sep  { color: rgba(255,255,255,0.15); }
+
   @media (max-width: 1000px) {
     .layout { grid-template-columns: 1fr; }
     .sidebar { max-height: 300px; position: static; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
@@ -246,6 +255,27 @@ function hrZone(avg) {
   return { label:'Max effort', color:'#e53935' };
 }
 
+function wmoDesc(code) {
+  if (code == null) return ['🌡️', 'Unknown'];
+  if (code === 0)          return ['☀️',  'Clear sky'];
+  if (code <= 1)           return ['🌤️', 'Mainly clear'];
+  if (code <= 2)           return ['⛅',  'Partly cloudy'];
+  if (code <= 3)           return ['☁️',  'Overcast'];
+  if (code <= 48)          return ['🌫️', 'Fog'];
+  if (code <= 55)          return ['🌦️', 'Drizzle'];
+  if (code <= 65)          return ['🌧️', 'Rain'];
+  if (code <= 75)          return ['🌨️', 'Snow'];
+  if (code <= 82)          return ['🌦️', 'Showers'];
+  if (code <= 99)          return ['⛈️',  'Thunderstorm'];
+  return ['🌡️', 'Unknown'];
+}
+
+function windDir(deg) {
+  if (deg == null) return '';
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
 async function loadActivities() {
   try {
     const res = await fetch(`${PROXY}?action=activities`);
@@ -292,19 +322,22 @@ async function selectActivity(id, el) {
   el.classList.add('active');
   document.getElementById('detailArea').innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
 
-  const [actRes, streamRes] = await Promise.all([
+  const [actRes, streamRes, weatherRes] = await Promise.all([
     fetch(`${PROXY}?action=activity&id=${id}`),
-    fetch(`${PROXY}?action=streams&id=${id}`)
+    fetch(`${PROXY}?action=streams&id=${id}`),
+    fetch(`${PROXY}?action=weather&id=${id}`)
   ]);
   const activity = await actRes.json();
   const streams = await streamRes.json();
+  const weatherRaw = await weatherRes.json().catch(() => ({}));
+  const weather = weatherRaw && !weatherRaw.error ? weatherRaw : null;
 
   document.getElementById('mapOverlay').style.display = 'block';
   document.getElementById('overlayTitle').textContent = activity.name;
   document.getElementById('overlaySubtitle').textContent = `${fDate(activity.start_date_local)} · ${fDist(activity.distance)}`;
 
   drawRoute(streams);
-  renderDetail(activity, streams);
+  renderDetail(activity, streams, weather);
 }
 
 function drawRoute(streams) {
@@ -323,7 +356,7 @@ function drawRoute(streams) {
   map.fitBounds(L.latLngBounds(latlng), { padding: [30, 30] });
 }
 
-function renderDetail(a, streams) {
+function renderDetail(a, streams, weather = null) {
   if (hrChart) { hrChart.destroy(); hrChart = null; }
   if (altChart) { altChart.destroy(); altChart = null; }
 
@@ -409,8 +442,23 @@ function renderDetail(a, streams) {
   const hrCard = hr ? `<div class="chart-card"><div class="chart-label">Heart rate (bpm)</div><div style="position:relative;height:130px"><canvas id="hrCanvas"></canvas></div></div>` : '';
   const altCard = alt ? `<div class="chart-card"><div class="chart-label">Elevation (m)</div><div style="position:relative;height:100px"><canvas id="altCanvas"></canvas></div></div>` : '';
 
+  let weatherStrip = '';
+  if (weather && weather.temperature != null) {
+    const [icon, desc] = wmoDesc(weather.weather_code);
+    const dir = windDir(weather.wind_dir_deg);
+    const windStr = weather.wind_speed != null ? `${Math.round(weather.wind_speed)} km/h${dir ? ' ' + dir : ''}` : null;
+    weatherStrip = `<div class="weather-strip">
+      <span>${icon}</span><span>${desc}</span>
+      <span class="weather-sep">·</span>
+      <span class="weather-temp">${Math.round(weather.temperature)}°C</span>
+      ${weather.feels_like != null ? `<span style="font-size:11px;color:rgba(255,255,255,0.3)">feels like ${Math.round(weather.feels_like)}°C</span>` : ''}
+      ${weather.humidity != null ? `<span class="weather-sep">·</span><span>💧 ${Math.round(weather.humidity)}%</span>` : ''}
+      ${windStr ? `<span class="weather-sep">·</span><span>💨 ${windStr}</span>` : ''}
+    </div>`;
+  }
+
   document.getElementById('detailArea').innerHTML = `
-    ${topStats}${metaRow}
+    ${topStats}${weatherStrip}${metaRow}
     <div class="detail-cols">
       <div class="detail-col">${splitsCard}${effortsCard}</div>
       <div class="detail-col">${segsCard}${hrCard}${altCard}</div>
