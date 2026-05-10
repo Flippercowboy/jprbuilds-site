@@ -55,7 +55,8 @@
   .pace-bar-wrap { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
   .pace-bar { height: 3px; border-radius: 2px; background: #a78bfa; opacity: 0.6; min-width: 4px; }
 
-  .detail-bottom { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  /* Detail bottom — 3 columns */
+  .detail-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid rgba(255,255,255,0.07); }
   .detail-col { padding: 1.25rem 1.75rem; }
   .detail-col + .detail-col { border-left: 1px solid rgba(255,255,255,0.07); }
   .efforts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
@@ -71,10 +72,31 @@
   .pr-3 { background: rgba(205,127,50,0.15); color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
   .pr-none { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.08); }
 
-  .charts-section { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem 1.75rem; }
+  /* HR zone bars */
+  .zone-bars { display: flex; flex-direction: column; gap: 10px; }
+  .zone-row { display: flex; flex-direction: column; gap: 4px; }
+  .zone-header { display: flex; justify-content: space-between; align-items: center; }
+  .zone-name { font-size: 11px; font-weight: 500; }
+  .zone-time { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .zone-track { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .zone-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Charts */
+  .charts-section { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem 1.75rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
   .chart-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1rem 1.125rem; }
   .chart-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.3); margin-bottom: 10px; }
 
+  /* Similar runs */
+  .similar-section { padding: 1.25rem 1.75rem; }
+  .similar-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
+  .similar-table th { text-align: left; color: rgba(255,255,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0 6px; border-bottom: 1px solid rgba(255,255,255,0.07); font-weight: 500; }
+  .similar-table th:not(:first-child) { text-align: right; }
+  .similar-table td { padding: 7px 0; color: rgba(255,255,255,0.65); border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .similar-table td:not(:first-child) { text-align: right; }
+  .similar-table a { color: rgba(167,139,250,0.75); text-decoration: none; }
+  .similar-table a:hover { color: #a78bfa; }
+
+  /* Loading */
   .loading { display: flex; align-items: center; justify-content: center; min-height: 300px; color: rgba(255,255,255,0.3); font-size: 13px; gap: 8px; }
   .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -108,15 +130,9 @@
 
 <script>
 const PROXY = '/strava/proxy.php';
-let map = null, routeLayer = null, hrChart = null, altChart = null;
+let map = null, routeLayer = null, hrChart = null, altChart = null, paceChart = null;
 
-function hrColor(bpm) {
-  if (bpm < 120) return '#4fc3f7';
-  if (bpm < 140) return '#aed581';
-  if (bpm < 155) return '#ffeb3b';
-  if (bpm < 168) return '#ff8c42';
-  return '#e53935';
-}
+// ── Formatters ───────────────────────────────────────────────────────────────
 function fPace(mps) {
   if (!mps) return '—';
   const spm = 1000/mps, m = Math.floor(spm/60), s = Math.round(spm%60).toString().padStart(2,'0');
@@ -126,11 +142,25 @@ function fTime(s) {
   const m = Math.floor(s/60), sec = (s%60).toString().padStart(2,'0');
   return m > 59 ? `${Math.floor(m/60)}h ${(m%60).toString().padStart(2,'0')}m` : `${m}:${sec}`;
 }
+function fZoneTime(s) {
+  if (!s) return '—';
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s/60), sec = Math.round(s%60);
+  return m >= 60 ? `${Math.floor(m/60)}h ${m%60}m` : (sec > 0 ? `${m}m ${sec}s` : `${m}m`);
+}
 function fDate(iso) { return new Date(iso).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function fShortDate(iso) { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function fShortTime(s) {
   if (s < 60) return s + 's';
   const m = Math.floor(s/60), sec = (s%60).toString().padStart(2,'0');
   return m > 59 ? `${Math.floor(m/60)}:${(m%60).toString().padStart(2,'0')}:${sec}` : `${m}:${sec}`;
+}
+function hrColor(bpm) {
+  if (bpm < 120) return '#4fc3f7';
+  if (bpm < 140) return '#aed581';
+  if (bpm < 155) return '#ffeb3b';
+  if (bpm < 168) return '#ff8c42';
+  return '#e53935';
 }
 function wmoDesc(code) {
   if (code == null) return ['🌡️','Unknown'];
@@ -148,41 +178,93 @@ function wmoDesc(code) {
 }
 function windDir(deg) {
   if (deg == null) return '';
-  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg / 45) % 8];
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45)%8];
 }
 
+// ── HR zone breakdown ────────────────────────────────────────────────────────
+const ZONES = [
+  { label: 'Easy',       color: '#4fc3f7', max: 120 },
+  { label: 'Steady',     color: '#aed581', max: 140 },
+  { label: 'Tempo',      color: '#ffeb3b', max: 155 },
+  { label: 'Hard',       color: '#ff8c42', max: 168 },
+  { label: 'Max effort', color: '#e53935', max: Infinity },
+];
+
+function calcZones(hrData, timeData) {
+  const times = new Array(ZONES.length).fill(0);
+  for (let i = 0; i < hrData.length - 1; i++) {
+    const bpm = hrData[i];
+    const dt  = (timeData[i+1] - timeData[i]) || 1;
+    for (let z = 0; z < ZONES.length; z++) {
+      if (bpm < ZONES[z].max) { times[z] += dt; break; }
+    }
+  }
+  const total = times.reduce((s, t) => s + t, 0) || 1;
+  return ZONES.map((z, i) => ({ ...z, seconds: times[i], pct: times[i] / total * 100 }));
+}
+
+// ── Map ──────────────────────────────────────────────────────────────────────
 function drawRoute(streams) {
   if (map) { map.remove(); map = null; routeLayer = null; }
   const mapEl = document.getElementById('map');
   if (!mapEl) return;
+
   map = L.map('map', { zoomControl: true, attributionControl: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  const latlng = streams.latlng?.data, hr = streams.heartrate?.data;
+
+  const latlng  = streams.latlng?.data;
+  const hr      = streams.heartrate?.data;
+  const distData = streams.distance?.data;
   if (!latlng || !latlng.length) return;
+
+  // HR-coloured route segments
   const segs = [];
   for (let i = 0; i < latlng.length - 1; i++) {
     segs.push(L.polyline([latlng[i], latlng[i+1]], { color: hr ? hrColor(hr[i]) : '#a78bfa', weight: 4, opacity: 0.9 }));
   }
   routeLayer = L.layerGroup(segs).addTo(map);
   map.fitBounds(L.latLngBounds(latlng), { padding: [24, 24] });
+
+  // Km markers
+  if (distData) {
+    let nextKm = 1000;
+    for (let i = 0; i < distData.length; i++) {
+      if (distData[i] >= nextKm) {
+        const km = Math.round(nextKm / 1000);
+        L.marker(latlng[i], {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="background:#1a1833;border:1.5px solid rgba(255,255,255,0.35);color:rgba(255,255,255,0.75);font-size:9px;font-family:'DM Sans',sans-serif;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.6)">${km}</div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          })
+        }).addTo(map);
+        nextKm += 1000;
+      }
+    }
+  }
 }
 
-function renderDetail(a, streams, weather = null) {
-  if (hrChart) { hrChart.destroy(); hrChart = null; }
-  if (altChart) { altChart.destroy(); altChart = null; }
+// ── Main render ──────────────────────────────────────────────────────────────
+function renderDetail(a, streams, weather, similar) {
+  [hrChart, altChart, paceChart].forEach(c => { if (c) c.destroy(); });
+  hrChart = altChart = paceChart = null;
 
-  const hr = streams.heartrate?.data;
-  const alt = streams.altitude?.data;
-  const dist = streams.distance?.data;
-  const distKm = dist ? dist.map(d => (d/1000).toFixed(2)) : [];
+  const hr      = streams.heartrate?.data;
+  const alt     = streams.altitude?.data;
+  const dist    = streams.distance?.data;
+  const vel     = streams.velocity_smooth?.data;
+  const timeStr_data = streams.time?.data;
+  const distKm  = dist ? dist.map(d => (d/1000).toFixed(2)) : [];
 
   const timeStr = new Date(a.start_date_local).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 
+  // ── Weather ──
   let weatherHTML = '';
   if (weather && weather.temperature != null) {
     const [icon, desc] = wmoDesc(weather.weather_code);
     const dir = windDir(weather.wind_dir_deg);
-    const windStr = weather.wind_speed != null ? `${Math.round(weather.wind_speed)} km/h${dir ? ' ' + dir : ''}` : null;
+    const windStr = weather.wind_speed != null ? `${Math.round(weather.wind_speed)} km/h${dir ? ' '+dir : ''}` : null;
     weatherHTML = `<div class="weather-strip">
       <span>${icon}</span><span>${desc}</span>
       <span class="weather-sep">·</span><span class="weather-temp">${Math.round(weather.temperature)}°C</span>
@@ -192,12 +274,13 @@ function renderDetail(a, streams, weather = null) {
     </div>`;
   }
 
+  // ── Splits ──
   const splits = (a.splits_metric || []).filter(s => s.distance > 100);
-  const paces = splits.map(s => s.average_speed > 0 ? 1000/s.average_speed : 999);
+  const paces  = splits.map(s => s.average_speed > 0 ? 1000/s.average_speed : 999);
   const minP = Math.min(...paces), maxP = Math.max(...paces);
   const splitsRows = splits.map(s => {
     const pv = s.average_speed > 0 ? 1000/s.average_speed : 999;
-    const bw = Math.round(40 * (maxP - pv) / (maxP - minP + 0.01) + 8);
+    const bw = Math.round(40*(maxP-pv)/(maxP-minP+0.01)+8);
     const el = s.elevation_difference;
     const ec = el > 2 ? 'rgba(255,100,100,0.7)' : el < -2 ? 'rgba(100,200,100,0.7)' : 'rgba(255,255,255,0.3)';
     return `<tr>
@@ -208,9 +291,59 @@ function renderDetail(a, streams, weather = null) {
     </tr>`;
   }).join('');
 
+  // ── Best efforts + Segments ──
   const efforts = (a.best_efforts || []).filter(e => ['400m','1K','1 mile','2 mile','5K','10K'].includes(e.name));
-  const segs = (a.segment_efforts || []).slice(0, 8);
+  const segs    = (a.segment_efforts || []).slice(0, 8);
 
+  // ── HR zones ──
+  let zoneHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.2)">No HR data</div>';
+  if (hr && timeStr_data) {
+    const zones = calcZones(hr, timeStr_data);
+    zoneHTML = `<div class="zone-bars">${zones.map(z => `
+      <div class="zone-row">
+        <div class="zone-header">
+          <span class="zone-name" style="color:${z.color}">${z.label}</span>
+          <span class="zone-time">${fZoneTime(Math.round(z.seconds))}</span>
+        </div>
+        <div class="zone-track"><div class="zone-fill" style="width:${z.pct.toFixed(1)}%;background:${z.color}"></div></div>
+      </div>`).join('')}</div>`;
+  }
+
+  // ── Similar runs ──
+  let similarHTML = '';
+  if (Array.isArray(similar) && similar.length > 0) {
+    const rows = similar.map(s => `
+      <tr>
+        <td><a href="/strava/activity.html?id=${s.id}">${fShortDate(s.start_date_local)}</a></td>
+        <td>${(s.distance/1000).toFixed(2)} km</td>
+        <td>${fPace(s.average_speed)} /km</td>
+        <td>${fTime(s.moving_time)}</td>
+        <td>${s.average_heartrate ? Math.round(s.average_heartrate)+' bpm' : '—'}</td>
+        <td>${s.suffer_score || '—'}</td>
+      </tr>`).join('');
+    similarHTML = `
+      <div class="similar-section">
+        <div class="section-title">Similar runs (±15% distance)</div>
+        <table class="similar-table">
+          <thead><tr>
+            <th>Date</th><th style="text-align:right">Distance</th><th style="text-align:right">Pace</th>
+            <th style="text-align:right">Time</th><th style="text-align:right">Avg HR</th><th style="text-align:right">Suffer</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  // ── Charts ──
+  const hasCharts = hr || alt || vel;
+  const chartsSection = hasCharts ? `
+    <div class="charts-section">
+      ${vel ? `<div class="chart-card"><div class="chart-label">Pace (min/km)</div><div style="position:relative;height:130px"><canvas id="paceCanvas"></canvas></div></div>` : ''}
+      ${hr  ? `<div class="chart-card"><div class="chart-label">Heart rate (bpm)</div><div style="position:relative;height:130px"><canvas id="hrCanvas"></canvas></div></div>` : ''}
+      ${alt ? `<div class="chart-card"><div class="chart-label">Elevation (m)</div><div style="position:relative;height:100px"><canvas id="altCanvas"></canvas></div></div>` : ''}
+    </div>` : '';
+
+  // ── Inject HTML ──
   document.getElementById('detailArea').innerHTML = `
     <div class="act-header">
       <div class="act-name">${a.name}</div>
@@ -224,13 +357,13 @@ function renderDetail(a, streams, weather = null) {
     </div>
     <div class="sec-stats">
       ${[['Elevation', a.total_elevation_gain ? Math.round(a.total_elevation_gain)+'m' : '—'],
-         ['Calories', a.calories || '—'],
-         ['Elapsed', fTime(a.elapsed_time)],
-         ['Avg HR', a.average_heartrate ? Math.round(a.average_heartrate)+' bpm' : '—'],
-         ['Max HR', a.max_heartrate ? a.max_heartrate+' bpm' : '—'],
-         ['Cadence', a.average_cadence ? Math.round(a.average_cadence*2)+' spm' : '—'],
+         ['Calories',  a.calories || '—'],
+         ['Elapsed',   fTime(a.elapsed_time)],
+         ['Avg HR',    a.average_heartrate ? Math.round(a.average_heartrate)+' bpm' : '—'],
+         ['Max HR',    a.max_heartrate ? a.max_heartrate+' bpm' : '—'],
+         ['Cadence',   a.average_cadence ? Math.round(a.average_cadence*2)+' spm' : '—'],
          ['Best pace', fPace(a.max_speed)],
-         ['PRs', a.pr_count || 0]
+         ['PRs',       a.pr_count || 0]
         ].map(([l,v]) => `<div class="sec-stat"><span class="ss-val">${v}</span><span class="ss-lbl">${l}</span></div>`).join('')}
     </div>
     <div class="meta-section">
@@ -270,30 +403,49 @@ function renderDetail(a, streams, weather = null) {
       <div class="detail-col">
         <div class="section-title">Segments</div>
         ${segs.length
-          ? segs.map(s => { const p = s.pr_rank; const pl = p===1?'🥇 PR':p===2?'🥈 2nd':p===3?'🥉 3rd':fShortTime(s.elapsed_time); const pc = p===1?'pr-1':p===2?'pr-2':p===3?'pr-3':'pr-none'; return `<div class="segment-item"><span class="segment-name">${s.name}</span><span class="segment-pr ${pc}">${pl}</span></div>`; }).join('')
+          ? segs.map(s => { const p=s.pr_rank; const pl=p===1?'🥇 PR':p===2?'🥈 2nd':p===3?'🥉 3rd':fShortTime(s.elapsed_time); const pc=p===1?'pr-1':p===2?'pr-2':p===3?'pr-3':'pr-none'; return `<div class="segment-item"><span class="segment-name">${s.name}</span><span class="segment-pr ${pc}">${pl}</span></div>`; }).join('')
           : '<div style="font-size:12px;color:rgba(255,255,255,0.2)">No segments</div>'}
       </div>
+      <div class="detail-col">
+        <div class="section-title">HR zones</div>
+        ${zoneHTML}
+      </div>
     </div>
-    ${(hr || alt) ? `<div class="charts-section">
-      ${hr  ? `<div class="chart-card"><div class="chart-label">Heart rate (bpm)</div><div style="position:relative;height:140px"><canvas id="hrCanvas"></canvas></div></div>` : ''}
-      ${alt ? `<div class="chart-card"><div class="chart-label">Elevation (m)</div><div style="position:relative;height:110px"><canvas id="altCanvas"></canvas></div></div>` : ''}
-    </div>` : ''}`;
+    ${chartsSection}
+    ${similarHTML}`;
 
   drawRoute(streams);
 
+  // ── Charts ──
   const tick = { color:'rgba(255,255,255,0.3)', font:{size:10,family:'DM Sans'} };
   const grid = { color:'rgba(255,255,255,0.05)' };
   const skip = { autoSkip:true, maxTicksLimit:8 };
+
+  if (vel) {
+    const paceData = vel.map(v => v > 0.5 ? Math.round(1000/v) : null);
+    paceChart = new Chart(document.getElementById('paceCanvas'), {
+      type: 'line',
+      data: { labels: distKm, datasets: [{ data: paceData, borderColor: '#4fc3f7', backgroundColor: 'rgba(79,195,247,0.08)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3, spanGaps: true }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => { const m=Math.floor(c.parsed.y/60),s=Math.round(c.parsed.y%60).toString().padStart(2,'0'); return `${m}:${s} /km`; } } } },
+        scales: { x: { ticks:{...tick,...skip}, grid }, y: { reverse: true, ticks: { ...tick, callback: v => { const m=Math.floor(v/60),s=Math.round(v%60).toString().padStart(2,'0'); return `${m}:${s}`; } }, grid } } }
+    });
+  }
+
   if (hr) hrChart = new Chart(document.getElementById('hrCanvas'), {
-    type:'line', data:{labels:distKm, datasets:[{data:hr, borderColor:'#ff8c42', backgroundColor:'rgba(255,140,66,0.1)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>Math.round(c.parsed.y)+' bpm'}}}, scales:{x:{ticks:{...tick,...skip},grid}, y:{min:50, ticks:{...tick,callback:v=>v+' bpm'},grid}}}
+    type: 'line',
+    data: { labels: distKm, datasets: [{ data: hr, borderColor: '#ff8c42', backgroundColor: 'rgba(255,140,66,0.1)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>Math.round(c.parsed.y)+' bpm'}} }, scales: { x:{ticks:{...tick,...skip},grid}, y:{min:50,ticks:{...tick,callback:v=>v+' bpm'},grid} } }
   });
+
   if (alt) altChart = new Chart(document.getElementById('altCanvas'), {
-    type:'line', data:{labels:distKm, datasets:[{data:alt, borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,0.08)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>Math.round(c.parsed.y)+'m'}}}, scales:{x:{ticks:{...tick,...skip},grid}, y:{ticks:{...tick,callback:v=>v+'m'},grid}}}
+    type: 'line',
+    data: { labels: distKm, datasets: [{ data: alt, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>Math.round(c.parsed.y)+'m'}} }, scales: { x:{ticks:{...tick,...skip},grid}, y:{ticks:{...tick,callback:v=>v+'m'},grid} } }
   });
 }
 
+// ── Init ─────────────────────────────────────────────────────────────────────
 const id = new URLSearchParams(location.search).get('id');
 if (!id) {
   document.getElementById('detailArea').innerHTML = '<div class="loading">No activity specified.</div>';
@@ -301,14 +453,16 @@ if (!id) {
   Promise.all([
     fetch(`${PROXY}?action=activity&id=${id}`),
     fetch(`${PROXY}?action=streams&id=${id}`),
-    fetch(`${PROXY}?action=weather&id=${id}`)
-  ]).then(async ([ar, sr, wr]) => {
-    const activity = await ar.json();
-    const streams  = await sr.json();
-    const weatherRaw = await wr.json().catch(() => ({}));
-    const weather = weatherRaw && !weatherRaw.error ? weatherRaw : null;
-    document.title = `${activity.name} — jprbuilds`;
-    renderDetail(activity, streams, weather);
+    fetch(`${PROXY}?action=weather&id=${id}`),
+    fetch(`${PROXY}?action=similar&id=${id}`)
+  ]).then(async ([ar, sr, wr, simr]) => {
+    const activity    = await ar.json();
+    const streams     = await sr.json();
+    const weatherRaw  = await wr.json().catch(() => ({}));
+    const similar     = await simr.json().catch(() => []);
+    const weather     = weatherRaw && !weatherRaw.error ? weatherRaw : null;
+    document.title    = `${activity.name} — jprbuilds`;
+    renderDetail(activity, streams, weather, similar);
   }).catch(() => {
     document.getElementById('detailArea').innerHTML = '<div class="loading">Failed to load activity.</div>';
   });

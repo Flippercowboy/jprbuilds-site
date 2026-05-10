@@ -166,5 +166,40 @@ if ($action === 'weather') {
     exit;
 }
 
+if ($action === 'similar') {
+    $id = intval($_GET['id'] ?? 0);
+    if (!$id) { http_response_code(400); echo json_encode(['error' => 'Missing id']); exit; }
+    try {
+        $pdo  = get_db();
+        $self = $pdo->prepare("SELECT distance, type FROM strava_activities WHERE id = ?");
+        $self->execute([$id]);
+        $act  = $self->fetch();
+        if (!$act) { echo json_encode([]); exit; }
+
+        $dist  = (float)$act['distance'];
+        $types = in_array($act['type'], ['Run','VirtualRun']) ? ['Run','VirtualRun'] : ['Ride','VirtualRide'];
+        $ph    = implode(',', array_fill(0, count($types), '?'));
+
+        $stmt = $pdo->prepare("SELECT id, name, start_date_local, distance, moving_time,
+            average_speed, average_heartrate, suffer_score, total_elevation_gain
+            FROM strava_activities
+            WHERE type IN ({$ph}) AND distance BETWEEN ? AND ? AND id != ?
+            ORDER BY start_date DESC LIMIT 5");
+        $stmt->execute(array_merge($types, [$dist * 0.85, $dist * 1.15, $id]));
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as &$r) {
+            $r['distance']             = (float)$r['distance'];
+            $r['moving_time']          = (int)$r['moving_time'];
+            $r['average_speed']        = $r['average_speed']     ? (float)$r['average_speed']     : null;
+            $r['average_heartrate']    = $r['average_heartrate'] ? (float)$r['average_heartrate'] : null;
+            $r['suffer_score']         = $r['suffer_score']      ? (int)$r['suffer_score']        : null;
+            $r['total_elevation_gain'] = (float)$r['total_elevation_gain'];
+        }
+        echo json_encode($rows);
+    } catch (Exception $e) { echo json_encode([]); }
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'Unknown action']);
