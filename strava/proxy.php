@@ -47,16 +47,10 @@ if ($action === 'activities') {
         if (!$throttled) {
             $token = get_access_token();
             if ($token) {
-                if ($count === 0) {
-                    // DB empty (pre-backfill): grab a recent page so the page isn't blank
-                    $url = 'athlete/activities?per_page=200';
-                } else {
-                    $latest = $pdo->query("SELECT MAX(start_date) FROM strava_activities")->fetchColumn();
-                    $url    = 'athlete/activities?per_page=50&after=' . strtotime($latest);
-                }
-                $new      = strava_get($url, $token) ?? [];
-                $new_runs = array_filter($new, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun']));
-                if (!empty($new_runs)) db_upsert_activities($pdo, $new_runs);
+                // Always fetch latest 50 — catches new activities AND name/data edits on recent ones
+                $recent = strava_get('athlete/activities?per_page=50', $token) ?? [];
+                $runs   = array_filter($recent, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun', 'Ride', 'VirtualRide']));
+                if (!empty($runs)) db_upsert_activities($pdo, $runs);
                 file_put_contents($check_file, time());
             }
         }

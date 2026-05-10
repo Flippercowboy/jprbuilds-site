@@ -443,9 +443,10 @@ async function init() {
     runs.forEach(a => {
       const zone    = hrZone(a.average_heartrate);
       const svg     = routeSVG(a.map?.summary_polyline, 100, 72);
+      const isRide  = a.type === 'Ride' || a.type === 'VirtualRide';
       const thumb   = svg
         ? `<div class="card-thumb">${svg}</div>`
-        : `<div class="card-thumb"><div class="thumb-placeholder">🏃</div></div>`;
+        : `<div class="card-thumb"><div class="thumb-placeholder">${isRide ? '🚴' : '🏃'}</div></div>`;
 
       const dateObj = new Date(a.start_date_local);
       const dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });

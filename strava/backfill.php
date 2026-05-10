@@ -100,7 +100,7 @@ while (true) {
     }
 
     $total_pages++;
-    $runs = array_filter($data, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun']));
+    $runs = array_filter($data, fn($a) => in_array($a['type'] ?? '', ['Run', 'VirtualRun', 'Ride', 'VirtualRide']));
 
     if (!empty($runs)) {
         $n = db_upsert_activities($pdo, $runs);
