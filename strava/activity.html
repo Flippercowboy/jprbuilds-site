@@ -327,7 +327,7 @@ function renderDetail(a, streams, weather, similar) {
         <table class="similar-table">
           <thead><tr>
             <th>Date</th><th style="text-align:right">Distance</th><th style="text-align:right">Pace</th>
-            <th style="text-align:right">Time</th><th style="text-align:right">Avg HR</th><th style="text-align:right">Suffer</th>
+            <th style="text-align:right">Time</th><th style="text-align:right">Avg HR</th><th style="text-align:right">Effort</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -353,7 +353,7 @@ function renderDetail(a, streams, weather, similar) {
       <div class="hero-stat"><div class="hs-val">${(a.distance/1000).toFixed(2)}<span class="hs-unit">km</span></div><div class="hs-lbl">Distance</div></div>
       <div class="hero-stat"><div class="hs-val">${fTime(a.moving_time)}</div><div class="hs-lbl">Moving time</div></div>
       <div class="hero-stat"><div class="hs-val">${fPace(a.average_speed)}<span class="hs-unit">/km</span></div><div class="hs-lbl">Avg pace</div></div>
-      <div class="hero-stat hero-stat--effort"><div class="hs-val">${a.suffer_score || '—'}</div><div class="hs-lbl">Suffer score</div></div>
+      <div class="hero-stat hero-stat--effort"><div class="hs-val">${a.suffer_score || '—'}</div><div class="hs-lbl">Relative Effort</div></div>
     </div>
     <div class="sec-stats">
       ${[['Elevation', a.total_elevation_gain ? Math.round(a.total_elevation_gain)+'m' : '—'],
