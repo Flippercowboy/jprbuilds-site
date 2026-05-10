@@ -136,7 +136,14 @@ if ($action === 'weather') {
         $api_url = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lng}&start_date={$date}&end_date={$date}&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,windspeed_10m,winddirection_10m,weathercode&past_days={$pd}&timezone=auto";
     }
 
-    $raw = @file_get_contents($api_url);
+    $ch = curl_init($api_url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_USERAGENT      => 'jprbuilds/1.0',
+    ]);
+    $raw = curl_exec($ch);
+    curl_close($ch);
     if (!$raw) { echo json_encode(['error' => 'api_fail']); exit; }
 
     $wd = json_decode($raw, true);
