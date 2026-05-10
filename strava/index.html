@@ -278,27 +278,28 @@ function mondayOf(d) {
 
 function buildCalendar(runs) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const start = mondayOf(today);
-  start.setDate(start.getDate() - 28); // start of 5th week back
-
+  const mondayThis = mondayOf(today);
   const runDays = new Set(runs.map(a => isoDate(new Date(a.start_date_local))));
 
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
-  for (let i = 0; i < 35; i++) {
-    const d = new Date(start); d.setDate(start.getDate() + i);
-    const key = isoDate(d);
-    const dot = document.createElement('div');
-    dot.className = 'cal-dot' + (runDays.has(key) ? ' ran' : '') + (d.getTime() === today.getTime() ? ' today' : '');
-    dot.title = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (runDays.has(key) ? ' — ran' : '');
-    grid.appendChild(dot);
+  // w=0 = this week (top row), w=4 = 4 weeks ago (bottom row)
+  for (let w = 0; w < 5; w++) {
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(mondayThis); date.setDate(mondayThis.getDate() - w * 7 + d);
+      const key = isoDate(date);
+      const dot = document.createElement('div');
+      dot.className = 'cal-dot' + (runDays.has(key) ? ' ran' : '') + (date.getTime() === today.getTime() ? ' today' : '');
+      dot.title = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (runDays.has(key) ? ' — ran' : '');
+      grid.appendChild(dot);
+    }
   }
 }
 
 function buildEffortBars(runs) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const weeks = [];
-  for (let w = 7; w >= 0; w--) {
+  for (let w = 0; w <= 7; w++) {
     const start = mondayOf(today); start.setDate(start.getDate() - w * 7);
     const end = new Date(start); end.setDate(start.getDate() + 7);
     const km = runs.filter(a => { const d = new Date(a.start_date_local); return d >= start && d < end; })
