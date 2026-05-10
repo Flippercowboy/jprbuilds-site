@@ -8,7 +8,7 @@
 <style>
   .layout {
     display: grid;
-    grid-template-columns: 264px 1fr;
+    grid-template-columns: 264px 1fr 210px;
     min-height: calc(100vh - 130px);
   }
 
@@ -80,8 +80,40 @@
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
-    max-width: 800px;
   }
+
+  /* ── Right rail ── */
+  .right-rail {
+    border-left: 1px solid rgba(255,255,255,0.07);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    scrollbar-width: none;
+  }
+  .right-rail::-webkit-scrollbar { display: none; }
+
+  /* All-time totals */
+  .at-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .at-item { display: flex; flex-direction: column; gap: 3px; }
+  .at-val { font-family: 'DM Serif Display', serif; font-size: 1.25rem; color: #a78bfa; line-height: 1.1; }
+  .at-lbl { font-size: 10px; color: rgba(255,255,255,0.28); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Personal bests */
+  .pb-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .pb-item:last-child { border-bottom: none; }
+  .pb-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.25); }
+  .pb-val { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.85); }
+  .pb-link { font-size: 10px; color: rgba(167,139,250,0.55); text-decoration: none; transition: color 0.15s; }
+  .pb-link:hover { color: #a78bfa; }
 
   /* ── Activity cards ── */
   .activity-card {
@@ -140,6 +172,10 @@
   .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 264px 1fr; }
+    .right-rail { display: none; }
+  }
   @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; }
     .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); flex-direction: row; flex-wrap: wrap; overflow: visible; }
@@ -201,6 +237,25 @@
       <div class="loading"><div class="spinner"></div> Loading…</div>
     </div>
   </div>
+
+  <aside class="right-rail">
+    <div class="widget">
+      <div class="widget-title">All time</div>
+      <div class="at-grid" id="allTimeGrid">
+        <div class="at-item"><span class="at-val">—</span><span class="at-lbl">Runs</span></div>
+        <div class="at-item"><span class="at-val">—</span><span class="at-lbl">km</span></div>
+        <div class="at-item"><span class="at-val">—</span><span class="at-lbl">Hours</span></div>
+        <div class="at-item"><span class="at-val">—</span><span class="at-lbl">Elevation</span></div>
+      </div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Personal bests</div>
+      <div id="pbList">
+        <div class="pb-item"><span class="pb-lbl">Loading…</span></div>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <footer class="site-footer">
@@ -296,6 +351,47 @@ function buildCalendar(runs) {
   }
 }
 
+function buildRightRail(runs) {
+  // All-time totals
+  const totalKm   = runs.reduce((s, a) => s + a.distance, 0) / 1000;
+  const totalSecs = runs.reduce((s, a) => s + (a.moving_time || 0), 0);
+  const totalElev = runs.reduce((s, a) => s + (a.total_elevation_gain || 0), 0);
+  const totalHrs  = (totalSecs / 3600).toFixed(0);
+  const elevStr   = totalElev >= 1000 ? (totalElev / 1000).toFixed(1) + 'k' : Math.round(totalElev) + '';
+
+  document.getElementById('allTimeGrid').innerHTML = `
+    <div class="at-item"><span class="at-val">${runs.length}</span><span class="at-lbl">Runs</span></div>
+    <div class="at-item"><span class="at-val">${Math.round(totalKm).toLocaleString('en-GB')}</span><span class="at-lbl">km</span></div>
+    <div class="at-item"><span class="at-val">${totalHrs}</span><span class="at-lbl">Hours</span></div>
+    <div class="at-item"><span class="at-val">${elevStr}m</span><span class="at-lbl">Elevation</span></div>`;
+
+  // Personal bests — find the activity for each record
+  const withDist  = runs.filter(a => a.distance > 0);
+  const withSpeed = runs.filter(a => a.average_speed > 0);
+  const withElev  = runs.filter(a => (a.total_elevation_gain || 0) > 0);
+
+  const longest  = withDist.length  ? withDist.reduce((b, a) => a.distance > b.distance ? a : b)                           : null;
+  const fastest  = withSpeed.length ? withSpeed.reduce((b, a) => a.average_speed > b.average_speed ? a : b)                 : null;
+  const hilliest = withElev.length  ? withElev.reduce((b, a) => a.total_elevation_gain > b.total_elevation_gain ? a : b)    : null;
+
+  function pbDate(a) {
+    return new Date(a.start_date_local).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  const bests = [
+    longest  && { lbl: 'Longest run',    val: (longest.distance / 1000).toFixed(2) + ' km', a: longest  },
+    fastest  && { lbl: 'Best avg pace',  val: fPace(fastest.average_speed) + ' /km',         a: fastest  },
+    hilliest && { lbl: 'Most elevation', val: Math.round(hilliest.total_elevation_gain) + 'm', a: hilliest },
+  ].filter(Boolean);
+
+  document.getElementById('pbList').innerHTML = bests.map(({ lbl, val, a }) => `
+    <div class="pb-item">
+      <span class="pb-lbl">${lbl}</span>
+      <span class="pb-val">${val}</span>
+      <a class="pb-link" href="/strava/activity.html?id=${a.id}">${pbDate(a)} →</a>
+    </div>`).join('');
+}
+
 function buildEffortBars(runs) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const weeks = [];
@@ -339,6 +435,7 @@ async function init() {
 
     buildCalendar(runs);
     buildEffortBars(runs);
+    buildRightRail(runs);
 
     // Feed cards
     const feed = document.getElementById('feed');
