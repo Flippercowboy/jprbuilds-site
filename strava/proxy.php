@@ -232,5 +232,20 @@ if ($action === 'parkrun_dates') {
     exit;
 }
 
+if ($action === 'sync_parkrun') {
+    $key = $_GET['key'] ?? '';
+    if (!defined('BACKFILL_KEY') || $key !== BACKFILL_KEY) {
+        http_response_code(403); echo json_encode(['error' => 'Forbidden']); exit;
+    }
+    require_once __DIR__ . '/parkrun_sync.php';
+    try {
+        echo json_encode(sync_parkrun_from_gmail(), JSON_PRETTY_PRINT);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'Unknown action']);
