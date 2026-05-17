@@ -111,41 +111,35 @@ function parse_parkrun_email(string $body, string $subject, string $dateStr): ?a
     $is_junior = (bool)preg_match('/junior\s+parkrun/i', $subject . ' ' . $text);
 
     // --- Event name and number ---
-    // Emails say "Your result from Daventry parkrun #533"
-    // or "Your result from Daventry Country Park junior parkrun event 394"
-    // We want just the event name (e.g. "Daventry", "Burnham and Highbridge")
+    // Subject format: "Your result from Daventry parkrun, Event 259 on 2019-09-21"
+    // Body format:    "Daventry parkrun results for event #259. Your time was 00:29:17."
+    // Junior subject: "Your result from Daventry Country Park junior parkrun, Event 42 on 2025-01-12"
     $event_name   = null;
     $event_number = null;
 
-    // Try: "from {Name} [junior ]parkrun #NNN" or "event number NNN"
-    if (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun\s+#(\d+)/i', $text, $m)) {
+    // 1. Try subject first — most reliable: "from {Name} [junior ]parkrun, Event NNN"
+    if (preg_match('/from\s+(.+?)\s+(?:junior\s+)?parkrun,\s*Event\s+(\d+)/i', $subject, $m)) {
         $event_name   = trim($m[1]);
         $event_number = (int)$m[2];
-    } elseif (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun\s+event\s+(?:number\s+)?(\d+)/i', $text, $m)) {
-        $event_name   = trim($m[1]);
-        $event_number = (int)$m[2];
-    } elseif (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun/i', $text, $m)) {
-        $event_name = trim($m[1]);
-    } elseif (preg_match('/([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun\s+#(\d+)/i', $text, $m)) {
-        $event_name   = trim($m[1]);
-        $event_number = (int)$m[2];
-    } elseif (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun/i', $subject, $m)) {
-        $event_name = trim($m[1]);
     }
-
-    // Strip any lingering "Your result" / "result" prefix
-    if ($event_name) {
-        $event_name = preg_replace('/^(your\s+result\s+from|result\s+from|from)\s+/i', '', $event_name);
-        $event_name = trim($event_name);
+    // 2. Body: "{Name} parkrun results for event #NNN"
+    if (!$event_name && preg_match('/^(.+?)\s+(?:junior\s+)?parkrun\s+results\s+for\s+event\s+#(\d+)/im', $text, $m)) {
+        $event_name   = trim($m[1]);
+        $event_number = (int)$m[2];
+    }
+    // 3. Subject fallback — "from {Name} parkrun" with no event number
+    if (!$event_name && preg_match('/from\s+(.+?)\s+(?:junior\s+)?parkrun/i', $subject, $m)) {
+        $event_name = trim($m[1]);
     }
 
     if (!$event_name) return null;
 
     // --- Finish time ---
+    // Body: "Your time was 00:29:17."
     $finish_time = null;
-    if (preg_match('/[Ff]inish\s+[Tt]ime[:\s]+(\d{2}:\d{2}:\d{2})/', $text, $m)) {
+    if (preg_match('/your\s+time\s+was\s+(\d{2}:\d{2}:\d{2})/i', $text, $m)) {
         $finish_time = $m[1];
-    } elseif (preg_match('/[Tt]ime[:\s]+(\d{2}:\d{2}:\d{2})/', $text, $m)) {
+    } elseif (preg_match('/finish(?:ed)?\s+(?:time|in)[:\s]+(\d{2}:\d{2}:\d{2})/i', $text, $m)) {
         $finish_time = $m[1];
     } elseif (preg_match('/(\d{2}:\d{2}:\d{2})/', $text, $m)) {
         $finish_time = $m[1];
@@ -158,24 +152,26 @@ function parse_parkrun_email(string $body, string $subject, string $dateStr): ?a
     $finish_seconds = $h * 3600 + $mi * 60 + $s;
 
     // --- Position ---
+    // Body: "You finished in 155th place"
     $position = null;
-    if (preg_match('/[Ff]inish\s+[Pp]osition[:\s]+(\d+)/', $text, $m)) {
+    if (preg_match('/you\s+finished\s+in\s+(\d+)(?:st|nd|rd|th)\s+place/i', $text, $m)) {
         $position = (int)$m[1];
-    } elseif (preg_match('/[Pp]osition[:\s]+(\d+)/', $text, $m)) {
+    } elseif (preg_match('/finished\s+in\s+(\d+)(?:st|nd|rd|th)/i', $text, $m)) {
         $position = (int)$m[1];
-    } elseif (preg_match('/you\s+finished\s+in\s+(\d+)/i', $text, $m)) {
+    } elseif (preg_match('/finish(?:ed)?\s+position[:\s]+(\d+)/i', $text, $m)) {
         $position = (int)$m[1];
     }
 
     // --- parkrun count ---
+    // Body: "completing your 1st parkrun" or "completed 104 parkruns"
     $parkrun_count = null;
-    if (preg_match('/completed\s+(\d+)\s+parkrun/i', $text, $m)) {
+    if (preg_match('/completing\s+your\s+(\d+)(?:st|nd|rd|th)\s+parkrun/i', $text, $m)) {
+        $parkrun_count = (int)$m[1];
+    } elseif (preg_match('/completed\s+(\d+)\s+parkrun/i', $text, $m)) {
+        $parkrun_count = (int)$m[1];
+    } elseif (preg_match('/your\s+(\d+)(?:st|nd|rd|th)\s+parkrun/i', $text, $m)) {
         $parkrun_count = (int)$m[1];
     } elseif (preg_match('/(\d+)\s+parkruns?\s+in\s+total/i', $text, $m)) {
-        $parkrun_count = (int)$m[1];
-    } elseif (preg_match('/parkrun\s+number\s+(\d+)/i', $text, $m)) {
-        $parkrun_count = (int)$m[1];
-    } elseif (preg_match('/your\s+(\d+)(st|nd|rd|th)\s+parkrun/i', $text, $m)) {
         $parkrun_count = (int)$m[1];
     }
 
