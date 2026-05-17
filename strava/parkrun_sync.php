@@ -294,11 +294,19 @@ if (php_sapi_name() === 'cli' && in_array('debug', $argv ?? [])) {
     $conn = imap_connect_gmail();
     $ids  = fetch_parkrun_email_ids($conn);
     if (!$ids) { echo "No parkrun emails found.\n"; exit; }
-    $msgNum = $ids[0];
-    $header  = imap_headerinfo($conn, $msgNum);
-    echo "=== SUBJECT ===\n" . imap_utf8($header->subject ?? '') . "\n\n";
-    echo "=== DATE ===\n" . ($header->date ?? '') . "\n\n";
-    echo "=== BODY ===\n" . get_email_body($conn, $msgNum) . "\n";
+    // Find first email that looks like a results email (contains a time)
+    foreach ($ids as $msgNum) {
+        $body = get_email_body($conn, $msgNum);
+        if (preg_match('/\d{2}:\d{2}:\d{2}/', $body)) {
+            $header = imap_headerinfo($conn, $msgNum);
+            echo "=== SUBJECT ===\n" . imap_utf8($header->subject ?? '') . "\n\n";
+            echo "=== DATE ===\n" . ($header->date ?? '') . "\n\n";
+            echo "=== BODY ===\n" . $body . "\n";
+            imap_close($conn);
+            exit;
+        }
+    }
+    echo "No results emails found.\n";
     imap_close($conn);
     exit;
 }
