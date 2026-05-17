@@ -12,12 +12,20 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 
+$_creds_file = __DIR__ . '/gmail_credentials.php';
+if (!file_exists($_creds_file)) {
+    $msg = 'gmail_credentials.php not found. Copy gmail_credentials.example.php to gmail_credentials.php and fill in your details.';
+    if (php_sapi_name() === 'cli') { echo "ERROR: $msg\n"; exit(1); }
+    http_response_code(500); echo json_encode(['error' => $msg]); exit;
+}
+require_once $_creds_file;
+
 /**
  * Connect to Gmail via IMAP and return mailbox handle.
  */
 function imap_connect_gmail(): mixed {
     if (!defined('GMAIL_USER') || !defined('GMAIL_APP_PASSWORD')) {
-        throw new RuntimeException('GMAIL_USER and GMAIL_APP_PASSWORD must be defined in config.php');
+        throw new RuntimeException('GMAIL_USER and GMAIL_APP_PASSWORD must be defined in gmail_credentials.php');
     }
     $mailbox = '{imap.gmail.com:993/imap/ssl}';
     $conn = imap_open($mailbox, GMAIL_USER, GMAIL_APP_PASSWORD, 0, 1, ['DISABLE_AUTHENTICATOR' => 'GSSAPI']);

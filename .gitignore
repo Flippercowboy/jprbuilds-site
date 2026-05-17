@@ -1,3 +1,4 @@
 .DS_Store
 strava/config.php
+strava/gmail_credentials.php
 strava/cache/
