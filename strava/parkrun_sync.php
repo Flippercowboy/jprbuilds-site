@@ -288,6 +288,21 @@ function sync_parkrun_from_gmail(): array {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
+// Debug mode: php parkrun_sync.php debug
+// Dumps the raw body of the first parkrun email so you can see the format
+if (php_sapi_name() === 'cli' && in_array('debug', $argv ?? [])) {
+    $conn = imap_connect_gmail();
+    $ids  = fetch_parkrun_email_ids($conn);
+    if (!$ids) { echo "No parkrun emails found.\n"; exit; }
+    $msgNum = $ids[0];
+    $header  = imap_headerinfo($conn, $msgNum);
+    echo "=== SUBJECT ===\n" . imap_utf8($header->subject ?? '') . "\n\n";
+    echo "=== DATE ===\n" . ($header->date ?? '') . "\n\n";
+    echo "=== BODY ===\n" . get_email_body($conn, $msgNum) . "\n";
+    imap_close($conn);
+    exit;
+}
+
 if (php_sapi_name() !== 'cli') {
     // Called via web — check key
     $key = $_GET['key'] ?? '';
