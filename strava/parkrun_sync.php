@@ -106,20 +106,37 @@ function parse_parkrun_email(string $body, string $subject, string $dateStr): ?a
     // Must contain a finish time to be a results email
     if (!preg_match('/\d{2}:\d{2}:\d{2}/', $text)) return null;
 
+    // --- is_junior ---
+    // Junior parkrun emails contain "junior parkrun" in the subject or body
+    $is_junior = (bool)preg_match('/junior\s+parkrun/i', $subject . ' ' . $text);
+
     // --- Event name and number ---
-    // "Daventry parkrun #533" or "Burnham and Highbridge parkrun event number 394"
+    // Emails say "Your result from Daventry parkrun #533"
+    // or "Your result from Daventry Country Park junior parkrun event 394"
+    // We want just the event name (e.g. "Daventry", "Burnham and Highbridge")
     $event_name   = null;
     $event_number = null;
 
-    if (preg_match('/([A-Za-z][A-Za-z &\-]+?)\s+parkrun\s+#(\d+)/i', $text, $m)) {
+    // Try: "from {Name} [junior ]parkrun #NNN" or "event number NNN"
+    if (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun\s+#(\d+)/i', $text, $m)) {
         $event_name   = trim($m[1]);
         $event_number = (int)$m[2];
-    } elseif (preg_match('/([A-Za-z][A-Za-z &\-]+?)\s+parkrun\s+event\s+number\s+(\d+)/i', $text, $m)) {
+    } elseif (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun\s+event\s+(?:number\s+)?(\d+)/i', $text, $m)) {
         $event_name   = trim($m[1]);
         $event_number = (int)$m[2];
-    } elseif (preg_match('/([A-Za-z][A-Za-z &\-]+?)\s+parkrun/i', $subject, $m)) {
-        // Fall back to subject for event name, no number
+    } elseif (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun/i', $text, $m)) {
         $event_name = trim($m[1]);
+    } elseif (preg_match('/([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun\s+#(\d+)/i', $text, $m)) {
+        $event_name   = trim($m[1]);
+        $event_number = (int)$m[2];
+    } elseif (preg_match('/from\s+([A-Za-z][A-Za-z &\-]+?)\s+(?:junior\s+)?parkrun/i', $subject, $m)) {
+        $event_name = trim($m[1]);
+    }
+
+    // Strip any lingering "Your result" / "result" prefix
+    if ($event_name) {
+        $event_name = preg_replace('/^(your\s+result\s+from|result\s+from|from)\s+/i', '', $event_name);
+        $event_name = trim($event_name);
     }
 
     if (!$event_name) return null;
@@ -179,6 +196,7 @@ function parse_parkrun_email(string $body, string $subject, string $dateStr): ?a
         'finish_seconds' => $finish_seconds,
         'position'       => $position,
         'parkrun_count'  => $parkrun_count,
+        'is_junior'      => $is_junior ? 1 : 0,
     ];
 }
 
@@ -200,15 +218,21 @@ function sync_parkrun_from_gmail(): array {
     $skipped  = 0;
     $errors   = [];
 
+    // Add is_junior column if it doesn't exist yet (safe to run every time)
+    try {
+        $pdo->exec("ALTER TABLE parkrun_results ADD COLUMN is_junior TINYINT(1) NOT NULL DEFAULT 0");
+    } catch (Exception $e) { /* column already exists */ }
+
     $stmt = $pdo->prepare("INSERT INTO parkrun_results
-        (run_date, event_name, event_number, finish_time, finish_seconds, position, parkrun_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (run_date, event_name, event_number, finish_time, finish_seconds, position, parkrun_count, is_junior)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             event_number=VALUES(event_number),
             finish_time=VALUES(finish_time),
             finish_seconds=VALUES(finish_seconds),
             position=VALUES(position),
-            parkrun_count=VALUES(parkrun_count)");
+            parkrun_count=VALUES(parkrun_count),
+            is_junior=VALUES(is_junior)");
 
     foreach ($ids as $msgNum) {
         try {
@@ -238,6 +262,7 @@ function sync_parkrun_from_gmail(): array {
                 $result['finish_seconds'],
                 $result['position'],
                 $result['parkrun_count'],
+                $result['is_junior'],
             ]);
 
             if ($isNew) {
@@ -291,7 +316,8 @@ if (php_sapi_name() !== 'cli') {
         if ($result['inserted']) {
             echo "\nNew results:\n";
             foreach ($result['inserted'] as $r) {
-                echo "  {$r['run_date']} {$r['event_name']} #{$r['event_number']} — {$r['finish_time']} pos {$r['position']} (parkrun #{$r['parkrun_count']})\n";
+                $tag = $r['is_junior'] ? ' [junior]' : '';
+                echo "  {$r['run_date']} {$r['event_name']} #{$r['event_number']} — {$r['finish_time']} pos {$r['position']} (parkrun #{$r['parkrun_count']}){$tag}\n";
             }
         }
     } catch (Exception $e) {
