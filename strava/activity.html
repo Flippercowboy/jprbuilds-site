@@ -280,18 +280,23 @@ function renderDetail(a, streams, weather, similar, parkrun) {
   // ── parkrun ──
   let parkrunHTML = '';
   const isRun = a.type === 'Run' || a.type === 'VirtualRun';
-  if (isRun && parkrun && parkrun.finish_time) {
-    const nth = parkrun.parkrun_count ? `${parkrun.parkrun_count}${['th','st','nd','rd'][Math.min(parkrun.parkrun_count%10>3||Math.floor(parkrun.parkrun_count/10)%10===1?0:parkrun.parkrun_count%10,3)]} parkrun` : 'parkrun';
-    const posStr = parkrun.position ? ` · ${parkrun.position}${['th','st','nd','rd'][Math.min(parkrun.position%10>3||Math.floor(parkrun.position/10)%10===1?0:parkrun.position%10,3)]} place` : '';
-    parkrunHTML = `<div class="parkrun-strip">
-      <span>🏃</span>
-      <span style="color:rgba(255,255,255,0.7);font-weight:500">${parkrun.event_name} parkrun #${parkrun.event_number}</span>
-      <span class="weather-sep">·</span>
-      <span class="parkrun-time">${parkrun.finish_time}</span>
-      <span class="parkrun-label">official time</span>
-      <span class="weather-sep">·</span>
-      <span>${nth}${posStr}</span>
-    </div>`;
+  if (isRun && Array.isArray(parkrun) && parkrun.length) {
+    parkrunHTML = parkrun.map(pr => {
+      const nth = pr.parkrun_count ? `${pr.parkrun_count}${['th','st','nd','rd'][Math.min(pr.parkrun_count%10>3||Math.floor(pr.parkrun_count/10)%10===1?0:pr.parkrun_count%10,3)]} parkrun` : 'parkrun';
+      const posStr = pr.position ? ` · ${pr.position}${['th','st','nd','rd'][Math.min(pr.position%10>3||Math.floor(pr.position/10)%10===1?0:pr.position%10,3)]} place` : '';
+      const juniorTag = pr.is_junior ? ' <span style="font-size:9px;opacity:0.5;text-transform:uppercase;letter-spacing:0.08em">junior</span>' : '';
+      return `<div class="parkrun-strip">
+        <span>🏃</span>
+        <span style="color:rgba(255,255,255,0.7);font-weight:500">${pr.runner_name}</span>${juniorTag}
+        <span class="weather-sep">·</span>
+        <span style="color:rgba(255,255,255,0.5)">${pr.event_name} parkrun #${pr.event_number}</span>
+        <span class="weather-sep">·</span>
+        <span class="parkrun-time">${pr.finish_time}</span>
+        <span class="parkrun-label">official time</span>
+        <span class="weather-sep">·</span>
+        <span>${nth}${posStr}</span>
+      </div>`;
+    }).join('');
   }
 
   // ── Splits ──

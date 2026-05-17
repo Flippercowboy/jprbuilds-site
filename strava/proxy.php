@@ -208,18 +208,21 @@ if ($action === 'parkrun') {
     }
     try {
         $pdo  = get_db();
-        $stmt = $pdo->prepare("SELECT * FROM parkrun_results WHERE run_date = ?");
+        $stmt = $pdo->prepare("SELECT * FROM parkrun_results WHERE run_date = ? ORDER BY is_junior ASC, runner_name ASC");
         $stmt->execute([$date]);
-        $row  = $stmt->fetch();
-        if ($row) {
+        $rows = $stmt->fetchAll();
+        $rows = array_map(function($row) {
             $row['id']             = (int)$row['id'];
             $row['event_number']   = (int)$row['event_number'];
             $row['finish_seconds'] = (int)$row['finish_seconds'];
-            $row['position']       = $row['position']     !== null ? (int)$row['position']     : null;
-            $row['parkrun_count']  = $row['parkrun_count'] !== null ? (int)$row['parkrun_count'] : null;
-        }
-        echo json_encode($row ?: null);
-    } catch (Exception $e) { echo json_encode(null); }
+            $row['position']       = $row['position']       !== null ? (int)$row['position']       : null;
+            $row['parkrun_count']  = $row['parkrun_count']  !== null ? (int)$row['parkrun_count']  : null;
+            $row['is_junior']      = (int)($row['is_junior'] ?? 0);
+            $row['runner_name']    = $row['runner_name'] ?? 'Jason';
+            return $row;
+        }, $rows);
+        echo json_encode($rows ?: []);
+    } catch (Exception $e) { echo json_encode([]); }
     exit;
 }
 

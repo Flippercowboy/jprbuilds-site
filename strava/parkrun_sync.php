@@ -106,6 +106,13 @@ function parse_parkrun_email(string $body, string $subject, string $dateStr): ?a
     // Must contain a finish time to be a results email
     if (!preg_match('/\d{2}:\d{2}:\d{2}/', $text)) return null;
 
+    // --- Runner name ---
+    // Emails start with "Hello Jason," or "Hello Barney,"
+    $runner_name = 'Jason'; // default
+    if (preg_match('/Hello\s+([A-Za-z]+)[,!]/i', $text, $m)) {
+        $runner_name = trim($m[1]);
+    }
+
     // --- is_junior ---
     // Junior parkrun emails contain "junior parkrun" in the subject or body
     $is_junior = (bool)preg_match('/junior\s+parkrun/i', $subject . ' ' . $text);
@@ -193,6 +200,7 @@ function parse_parkrun_email(string $body, string $subject, string $dateStr): ?a
         'position'       => $position,
         'parkrun_count'  => $parkrun_count,
         'is_junior'      => $is_junior ? 1 : 0,
+        'runner_name'    => $runner_name,
     ];
 }
 
@@ -214,14 +222,18 @@ function sync_parkrun_from_gmail(): array {
     $skipped  = 0;
     $errors   = [];
 
-    // Add is_junior column if it doesn't exist yet (safe to run every time)
+    // Add columns if they don't exist yet (safe to run every time)
+    try { $pdo->exec("ALTER TABLE parkrun_results ADD COLUMN is_junior TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE parkrun_results ADD COLUMN runner_name VARCHAR(50) NOT NULL DEFAULT 'Jason'"); } catch (Exception $e) {}
+    // Fix unique key to include runner_name so two runners on same day are separate rows
     try {
-        $pdo->exec("ALTER TABLE parkrun_results ADD COLUMN is_junior TINYINT(1) NOT NULL DEFAULT 0");
-    } catch (Exception $e) { /* column already exists */ }
+        $pdo->exec("ALTER TABLE parkrun_results DROP INDEX uq_date_event");
+        $pdo->exec("ALTER TABLE parkrun_results ADD UNIQUE KEY uq_date_event_runner (run_date, event_name, runner_name)");
+    } catch (Exception $e) {}
 
     $stmt = $pdo->prepare("INSERT INTO parkrun_results
-        (run_date, event_name, event_number, finish_time, finish_seconds, position, parkrun_count, is_junior)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (run_date, event_name, event_number, finish_time, finish_seconds, position, parkrun_count, is_junior, runner_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             event_number=VALUES(event_number),
             finish_time=VALUES(finish_time),
@@ -259,6 +271,7 @@ function sync_parkrun_from_gmail(): array {
                 $result['position'],
                 $result['parkrun_count'],
                 $result['is_junior'],
+                $result['runner_name'],
             ]);
 
             if ($isNew) {
@@ -336,7 +349,7 @@ if (php_sapi_name() !== 'cli') {
             echo "\nNew results:\n";
             foreach ($result['inserted'] as $r) {
                 $tag = $r['is_junior'] ? ' [junior]' : '';
-                echo "  {$r['run_date']} {$r['event_name']} #{$r['event_number']} — {$r['finish_time']} pos {$r['position']} (parkrun #{$r['parkrun_count']}){$tag}\n";
+                echo "  {$r['run_date']} {$r['runner_name']} — {$r['event_name']} #{$r['event_number']} — {$r['finish_time']} pos {$r['position']} (parkrun #{$r['parkrun_count']}){$tag}\n";
             }
         }
     } catch (Exception $e) {
