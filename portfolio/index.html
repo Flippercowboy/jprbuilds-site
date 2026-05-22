@@ -8,7 +8,10 @@
   <style>
     .hero {
       padding: 3rem 0 1.5rem;
-      text-align: center;
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 1.25rem;
+      align-items: center;
     }
 
     .hero h1 {
@@ -17,9 +20,9 @@
       margin-bottom: 0.6rem;
     }
 
-    .hero p {
-      max-width: 700px;
-      margin: 0 auto;
+    .hero p,
+    .hero ul {
+      max-width: 760px;
     }
 
     .grid {
@@ -46,14 +49,93 @@
     }
 
     .actions {
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       display: flex;
       gap: 0.75rem;
-      justify-content: center;
       flex-wrap: wrap;
     }
 
+    .photo-wrap {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .photo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hero-copy ul {
+      margin-left: 1.2rem;
+      margin-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .hero-copy li {
+      margin-bottom: 0.45rem;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 1.1rem;
+    }
+
+    .timeline .item {
+      padding: 1rem;
+    }
+
+    .timeline h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline .meta {
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.45);
+      margin-bottom: 0.45rem;
+    }
+
+    .timeline p {
+      font-size: 0.93rem;
+      color: rgba(255, 255, 255, 0.62);
+    }
+
     @media (max-width: 600px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .photo-wrap {
+        margin: 0 auto;
+      }
+
+      .hero-copy {
+        text-align: center;
+      }
+
+      .hero-copy ul {
+        text-align: left;
+      }
+
+      .actions {
+        justify-content: center;
+      }
+
       .hero h1 {
         font-size: 2rem;
       }
@@ -68,14 +150,25 @@
 
   <div class="site-container">
     <section class="hero">
-      <h1>Portfolio &amp; <em class="accent">CV</em></h1>
-      <p class="text-muted">
-        Technical Training &amp; Development Lead with 10+ years in automotive L&amp;D, focused on capability building,
-        digital learning, and performance improvement.
-      </p>
-      <div class="actions">
-        <a class="btn btn-primary" href="/projects/">View Projects</a>
-        <a class="btn btn-secondary" href="mailto:hello@jprbuilds.com">Contact</a>
+      <div class="photo-wrap">
+        <img src="/portfolio/jason-richards.jpg" alt="Jason Richards" onerror="this.style.display='none'; this.parentElement.textContent='Add your photo as /portfolio/jason-richards.jpg';" />
+      </div>
+      <div class="hero-copy">
+        <h1>Jason Richards — <em class="accent">Portfolio &amp; CV</em></h1>
+        <p class="text-muted">
+          Technical Training &amp; Development Lead with 10+ years transforming learning capability in the automotive
+          sector. I lead teams, improve standards, and build practical training technology.
+        </p>
+        <ul>
+          <li>Leadership of technical training teams and delivery operations</li>
+          <li>Design and rollout of blended learning programmes</li>
+          <li>Practical performance dashboards and internal tools</li>
+        </ul>
+        <div class="actions">
+          <a class="btn btn-primary" href="/portfolio/Jason-Richards-CV.pdf">Download CV (PDF)</a>
+          <a class="btn btn-secondary" href="/projects/">View Projects</a>
+          <a class="btn btn-secondary" href="mailto:hello@jprbuilds.com">Contact</a>
+        </div>
       </div>
     </section>
 
@@ -92,6 +185,22 @@
         <article class="panel card">
           <h2>Technology</h2>
           <p>Creating practical tools and internal systems that make training operations faster and more measurable.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 style="margin-bottom: 0.75rem; color: #fff;">Experience</h2>
+      <div class="timeline">
+        <article class="item card">
+          <h3>Technical Training &amp; Development Lead</h3>
+          <p class="meta">Automotive Sector · Daventry, UK · Current</p>
+          <p>Leading strategy, people development, and programme delivery across technical learning operations.</p>
+        </article>
+        <article class="item card">
+          <h3>Senior Technical Trainer / Learning Specialist</h3>
+          <p class="meta">Automotive Sector · Previous</p>
+          <p>Delivered high-impact technical learning and capability programmes for technicians and workshop teams.</p>
         </article>
       </div>
     </section>
