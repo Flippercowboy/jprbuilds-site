@@ -7,22 +7,65 @@
   <link rel="stylesheet" href="/css/site.css" />
   <style>
     .hero {
-      padding: 3rem 0 1.5rem;
+      padding: 3rem 0 1rem;
       display: grid;
-      grid-template-columns: 180px 1fr;
-      gap: 1.25rem;
+      grid-template-columns: 190px 1fr;
+      gap: 1.4rem;
       align-items: center;
     }
 
     .hero h1 {
-      font-size: 2.4rem;
+      font-size: 2.2rem;
       color: #fff;
       margin-bottom: 0.6rem;
     }
 
-    .hero p,
-    .hero ul {
-      max-width: 760px;
+    .hero p {
+      max-width: 820px;
+    }
+
+    .hero-sub {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 1.02rem;
+      line-height: 1.75;
+    }
+
+    .award {
+      margin-top: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #ffd089;
+      border-radius: 999px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1.2rem;
+    }
+
+    .stat {
+      padding: 0.95rem;
+    }
+
+    .stat .num {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .stat .label {
+      margin-top: 0.25rem;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.55);
     }
 
     .grid {
@@ -77,45 +120,33 @@
       display: block;
     }
 
-    .hero-copy ul {
-      margin-left: 1.2rem;
-      margin-top: 0.8rem;
-      color: rgba(255, 255, 255, 0.6);
+    .list {
+      margin: 0.85rem 0 0 1.2rem;
+      color: rgba(255, 255, 255, 0.65);
     }
 
-    .hero-copy li {
-      margin-bottom: 0.45rem;
+    .list li {
+      margin-bottom: 0.52rem;
     }
 
-    .timeline {
-      display: grid;
-      gap: 0.9rem;
-      margin-top: 1.1rem;
-    }
-
-    .timeline .item {
-      padding: 1rem;
-    }
-
-    .timeline h3 {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
+    .section-title {
+      margin-bottom: 0.55rem;
       color: #fff;
-      margin-bottom: 0.25rem;
+      font-size: 1.7rem;
     }
 
-    .timeline .meta {
-      font-size: 0.82rem;
-      color: rgba(255, 255, 255, 0.45);
-      margin-bottom: 0.45rem;
+    .section-copy {
+      font-size: 0.97rem;
+      color: rgba(255, 255, 255, 0.66);
+      line-height: 1.75;
     }
 
-    .timeline p {
-      font-size: 0.93rem;
-      color: rgba(255, 255, 255, 0.62);
+    .cta-box {
+      padding: 1.2rem;
+      margin-top: 0.8rem;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 760px) {
       .hero {
         grid-template-columns: 1fr;
       }
@@ -137,7 +168,7 @@
       }
 
       .hero h1 {
-        font-size: 2rem;
+        font-size: 1.9rem;
       }
     }
   </style>
@@ -154,55 +185,117 @@
         <img src="/portfolio/jason-richards.jpg" alt="Jason Richards" onerror="this.style.display='none'; this.parentElement.textContent='Add your photo as /portfolio/jason-richards.jpg';" />
       </div>
       <div class="hero-copy">
-        <h1>Jason Richards — <em class="accent">Portfolio &amp; CV</em></h1>
-        <p class="text-muted">
-          Technical Training &amp; Development Lead with 10+ years transforming learning capability in the automotive
-          sector. I lead teams, improve standards, and build practical training technology.
+        <h1>I build <em class="accent">award-winning teams</em> that deliver digital learning at scale.</h1>
+        <p class="hero-sub">
+          Currently leading an 18-person multi-disciplinary team at Mercedes-Benz UK, I’ve spent the last decade
+          transforming technical training from traditional classroom delivery into modern digital learning ecosystems.
         </p>
-        <ul>
-          <li>Leadership of technical training teams and delivery operations</li>
-          <li>Design and rollout of blended learning programmes</li>
-          <li>Practical performance dashboards and internal tools</li>
-        </ul>
+        <div class="award">🏆 Bronze Award — Best Team, Learning Technologies Awards 2022</div>
         <div class="actions">
           <a class="btn btn-primary" href="/portfolio/Jason-Richards-CV.pdf">Download CV (PDF)</a>
           <a class="btn btn-secondary" href="/projects/">View Projects</a>
           <a class="btn btn-secondary" href="mailto:hello@jprbuilds.com">Contact</a>
         </div>
+        <div class="stats">
+          <article class="stat card">
+            <div class="num">18-person</div>
+            <div class="label">Multi-disciplinary team leadership</div>
+          </article>
+          <article class="stat card">
+            <div class="num">350+ / year</div>
+            <div class="label">Video and learning projects delivered</div>
+          </article>
+          <article class="stat card">
+            <div class="num">150+ locations</div>
+            <div class="label">UK retail network supported by eLearning</div>
+          </article>
+          <article class="stat card">
+            <div class="num">3.5x growth</div>
+            <div class="label">Video production capability scale-up</div>
+          </article>
+        </div>
       </div>
     </section>
 
     <section class="section">
+      <h2 class="section-title">What I’ve Built</h2>
       <div class="grid">
         <article class="panel card">
-          <h2>Leadership</h2>
-          <p>Leading technical training strategy, team coaching, and delivery standards across the network.</p>
+          <h2>Production Scale-Up</h2>
+          <p>Scaled video production from 2 people to a 6-person team delivering 350+ projects annually.</p>
         </article>
         <article class="panel card">
-          <h2>Learning Design</h2>
-          <p>Building blended programmes, digital resources, and assessment pathways to improve learner outcomes.</p>
+          <h2>Strategic Delivery</h2>
+          <p>Led business-critical content for Mercedes-Benz’s franchise-to-agency transition: 100+ videos in 12 months.</p>
         </article>
         <article class="panel card">
-          <h2>Technology</h2>
-          <p>Creating practical tools and internal systems that make training operations faster and more measurable.</p>
+          <h2>Automation Systems</h2>
+          <p>Engineered a custom Monday.com system eliminating scheduling conflicts and optimising 18-person crew utilisation.</p>
+        </article>
+        <article class="panel card">
+          <h2>Media Infrastructure</h2>
+          <p>Built QNAP NAS infrastructure to support distributed editing workflows and reliable asset delivery.</p>
+        </article>
+        <article class="panel card">
+          <h2>Learning Reach</h2>
+          <p>Developed digital learning content serving 150+ UK retail locations at scale.</p>
         </article>
       </div>
     </section>
 
     <section class="section">
-      <h2 style="margin-bottom: 0.75rem; color: #fff;">Experience</h2>
-      <div class="timeline">
-        <article class="item card">
-          <h3>Technical Training &amp; Development Lead</h3>
-          <p class="meta">Automotive Sector · Daventry, UK · Current</p>
-          <p>Leading strategy, people development, and programme delivery across technical learning operations.</p>
-        </article>
-        <article class="item card">
-          <h3>Senior Technical Trainer / Learning Specialist</h3>
-          <p class="meta">Automotive Sector · Previous</p>
-          <p>Delivered high-impact technical learning and capability programmes for technicians and workshop teams.</p>
-        </article>
-      </div>
+      <h2 class="section-title">My Approach</h2>
+      <p class="section-copy">
+        I don’t just manage teams. I build the technical systems behind them. From process automation and workflow
+        optimisation to scaling operations under pressure, I combine strategic leadership with hands-on technical
+        problem-solving.
+      </p>
+      <ul class="list">
+        <li>Process automation that removes friction and improves speed</li>
+        <li>Workflow design that balances quality, consistency, and output</li>
+        <li>Resource and platform architecture that scales without breaking</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">What Drives Me</h2>
+      <p class="section-copy">
+        I care about creating learning experiences that genuinely change how people work. The right combination of
+        technology, content, and delivery can turn training from “mandatory compliance” into something people value
+        and use.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Technical Edge</h2>
+      <p class="section-copy">
+        Most L&amp;D leaders manage content creation. I also engineer the systems behind it: automation platforms,
+        media infrastructure, resource management tooling, and workflow optimisation. That technical foundation is
+        what enables team performance at scale.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Continuous Learning</h2>
+      <p class="section-copy">
+        30+ years in automotive has taught me discipline, precision, and execution under pressure. I’m now bringing
+        that expertise to broader sectors including higher education, corporate L&amp;D, EdTech, and professional
+        services.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Let’s Connect</h2>
+      <article class="cta-box card">
+        <p class="section-copy">
+          I’m always happy to discuss digital learning strategy, team development, learning technology infrastructure,
+          and scaling production operations.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="mailto:hello@jprbuilds.com">Get in Touch</a>
+          <a class="btn btn-secondary" href="/portfolio/Jason-Richards-CV.pdf">Download CV</a>
+        </div>
+      </article>
     </section>
   </div>
 
