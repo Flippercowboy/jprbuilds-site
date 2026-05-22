@@ -418,8 +418,19 @@ async function init() {
       fetch(`${PROXY}?action=activities`),
       fetch(`${PROXY}?action=parkrun_dates`)
     ]);
+
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const err = await res.json();
+        if (err?.error) msg = err.error;
+      } catch (_) {}
+      throw new Error(msg);
+    }
+
     const runs = await res.json();
-    const parkrunDates = new Set(await prRes.json().catch(() => []));
+    const parkrunDatesJson = await prRes.json().catch(() => []);
+    const parkrunDates = new Set(Array.isArray(parkrunDatesJson) ? parkrunDatesJson : []);
     if (!Array.isArray(runs) || !runs.length) {
       document.getElementById('feed').innerHTML = '<div class="loading">No runs yet.</div>';
       return;
@@ -485,7 +496,8 @@ async function init() {
       feed.appendChild(card);
     });
   } catch (e) {
-    document.getElementById('feed').innerHTML = '<div class="loading">Failed to load runs.</div>';
+    const msg = (e && e.message) ? e.message : 'Failed to load runs.';
+    document.getElementById('feed').innerHTML = `<div class="loading">Failed to load runs: ${msg}</div>`;
   }
 }
 
