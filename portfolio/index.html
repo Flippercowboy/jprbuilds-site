@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio & CV · jprbuilds.com</title>
+  <link rel="stylesheet" href="/css/site.css" />
+  <style>
+    .hero {
+      padding: 3rem 0 1.5rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.4rem;
+      color: #fff;
+      margin-bottom: 0.6rem;
+    }
+
+    .hero p {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .panel {
+      padding: 1.25rem;
+    }
+
+    .panel h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel p {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .actions {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <a href="/"><img src="/Logos/jprbuilds-logo-navbar.svg" alt="JPRBuilds" height="50" /></a>
+    <a href="/" class="back-link">← Back home</a>
+  </nav>
+
+  <div class="site-container">
+    <section class="hero">
+      <h1>Portfolio &amp; <em class="accent">CV</em></h1>
+      <p class="text-muted">
+        Technical Training &amp; Development Lead with 10+ years in automotive L&amp;D, focused on capability building,
+        digital learning, and performance improvement.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/projects/">View Projects</a>
+        <a class="btn btn-secondary" href="mailto:hello@jprbuilds.com">Contact</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid">
+        <article class="panel card">
+          <h2>Leadership</h2>
+          <p>Leading technical training strategy, team coaching, and delivery standards across the network.</p>
+        </article>
+        <article class="panel card">
+          <h2>Learning Design</h2>
+          <p>Building blended programmes, digital resources, and assessment pathways to improve learner outcomes.</p>
+        </article>
+        <article class="panel card">
+          <h2>Technology</h2>
+          <p>Creating practical tools and internal systems that make training operations faster and more measurable.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    Jason Richards © 2026 &nbsp;·&nbsp; Daventry, UK
+  </footer>
+</body>
+</html>
