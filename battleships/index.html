@@ -3,10 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Battleships</title>
+  <title>Battleships — jprbuilds.com</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .site-back-link {
+      position: fixed;
+      top: 0.75rem;
+      left: 1rem;
+      z-index: 200;
+      font-size: 0.8rem;
+      color: rgba(123,175,200,0.6);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .site-back-link:hover { color: #7bafc8; }
+  </style>
 </head>
 <body>
+  <a href="/" class="site-back-link">← jprbuilds.com</a>
 
   <!-- ══════════════════════════════════════════════════════════ NAME PICKER -->
   <div id="screen-namepick" class="screen">

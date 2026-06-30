@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img">
+  <title>JPRBuilds</title>
+  <rect width="32" height="32" rx="6" fill="#1a1833"/>
+  <g transform="translate(16,16) scale(0.9)">
+    <line x1="0" y1="0" x2="-14" y2="-13" stroke="#5a5490" stroke-width="1.5"/>
+    <line x1="0" y1="0" x2="14" y2="-13" stroke="#5a5490" stroke-width="1.5"/>
+    <line x1="0" y1="0" x2="-11" y2="13" stroke="#5a5490" stroke-width="1.5"/>
+    <line x1="0" y1="0" x2="11" y2="13" stroke="#5a5490" stroke-width="1.5"/>
+    <line x1="-14" y1="-13" x2="14" y2="-13" stroke="#5a5490" stroke-width="1.5"/>
+    <circle cx="-14" cy="-13" r="2.5" fill="none" stroke="#6a6490" stroke-width="1.5"/>
+    <circle cx="14" cy="-13" r="2.5" fill="none" stroke="#6a6490" stroke-width="1.5"/>
+    <circle cx="-11" cy="13" r="2.5" fill="none" stroke="#6a6490" stroke-width="1.5"/>
+    <circle cx="11" cy="13" r="2.5" fill="none" stroke="#6a6490" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="5" fill="#f4845f"/>
+  </g>
+</svg>
