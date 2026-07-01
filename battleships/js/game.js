@@ -106,6 +106,13 @@ function processShot(board, row, col) {
   return { board: newBoard, hit, shipSunk, sunkCells, gameOver, alreadyFired: false };
 }
 
+// Counts ships with at least one un-hit cell remaining — used to work out
+// how many shots a player gets in a Salvo-mode turn.
+function countAliveShips(board) {
+  const cells = board.flat();
+  return SHIPS.filter(ship => cells.some(c => c.shipId === ship.id && !c.hit)).length;
+}
+
 // Returns every {row, col} on board whose cell belongs to the given shipId.
 function getShipCellsById(board, shipId) {
   const cells = [];

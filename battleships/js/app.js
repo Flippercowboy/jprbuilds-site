@@ -31,6 +31,7 @@ const S = {
   isMyTurn:          false,
   lastMyShot:        null, // {row, col} — most recent cell I fired at (enemy-board)
   lastOpponentShot:  null, // {row, col} — most recent cell opponent fired at (my-board)
+  shotsRemaining:    0,    // Salvo mode only — shots left in my current turn
 
   // Spectator / host state
   specP1Id:          null,
@@ -710,6 +711,7 @@ async function transitionToBattle() {
   S.isMyTurn     = !!(room && room.current_turn === S.playerId);
   S.opponentName = (room && (S.playerNum === 1 ? room.player2_name : room.player1_name)) || 'Opponent';
   S.phase        = 'battle';
+  if (S.rules === 'salvo' && S.isMyTurn) S.shotsRemaining = countAliveShips(S.myBoard);
   if (_placementKeyHandler) {
     document.removeEventListener('keydown', _placementKeyHandler);
     _placementKeyHandler = null;
@@ -753,6 +755,9 @@ async function rejoinBattle(room) {
   markSunkShips(S.myBoard, S.myBoard);
   S.isMyTurn = (room.current_turn === S.playerId);
   S.phase    = 'battle';
+  // Salvo shot count isn't tracked per-turn server-side, so on reconnect just
+  // grant a fresh allotment for the current turn rather than risk under-counting.
+  if (S.rules === 'salvo' && S.isMyTurn) S.shotsRemaining = countAliveShips(S.myBoard);
   initBattleScreen();
 }
 
@@ -761,12 +766,14 @@ async function rejoinBattle(room) {
 function initBattleScreen() {
   showScreen('battle');
   refreshBattleBoards();
-  setTurnIndicator(S.isMyTurn);
+  setTurnIndicator(S.isMyTurn, S.rules === 'salvo' ? S.shotsRemaining : null);
 
-  document.getElementById('rules-indicator').textContent =
-    S.rules === 'classic'
-      ? '\u2693 Classic \u2013 hit again on a hit'
-      : '\ud83d\udd04 Modern \u2013 turns always alternate';
+  const RULES_LABEL = {
+    classic: '\u2693 Classic \u2013 hit again on a hit',
+    modern:  '\ud83d\udd04 Modern \u2013 turns always alternate',
+    salvo:   '\ud83d\udca5 Salvo \u2013 one shot per surviving ship',
+  };
+  document.getElementById('rules-indicator').textContent = RULES_LABEL[S.rules] || '';
 
   addBattleLog('Game started!', 'info');
   addBattleLog(S.isMyTurn ? 'You go first.' : 'Opponent goes first.', 'info');
@@ -798,7 +805,12 @@ async function handleFire(row, col) {
   }
 
   let nextTurn;
-  if (S.rules === 'classic' && result.hit && !result.gameOver) {
+  if (S.rules === 'salvo' && !result.gameOver) {
+    S.shotsRemaining--;
+    const salvoSpent = S.shotsRemaining <= 0;
+    nextTurn   = salvoSpent ? S.opponentId : S.playerId;
+    S.isMyTurn = !salvoSpent;
+  } else if (S.rules === 'classic' && result.hit && !result.gameOver) {
     nextTurn   = S.playerId;
     S.isMyTurn = true;
   } else {
@@ -836,6 +848,7 @@ function onIncomingMove(payload) {
     });
   }
   S.isMyTurn = (nextTurn === S.playerId);
+  if (S.rules === 'salvo' && S.isMyTurn) S.shotsRemaining = countAliveShips(S.myBoard);
   updateBattleUI(row, col, { hit, shipSunk, gameOver }, false);
   if (gameOver) showGameOver(false);
 }
@@ -844,12 +857,13 @@ function updateBattleUI(row, col, result, iAttacked) {
   if (iAttacked) S.lastMyShot       = { row, col };
   else           S.lastOpponentShot = { row, col };
   refreshBattleBoards();
-  setTurnIndicator(S.isMyTurn);
+  setTurnIndicator(S.isMyTurn, S.rules === 'salvo' ? S.shotsRemaining : null);
   const coord = coordLabel(row, col);
+  const salvoSuffix = (S.rules === 'salvo' && S.isMyTurn) ? ` ${S.shotsRemaining} shot${S.shotsRemaining === 1 ? '' : 's'} left.` : '';
   if (iAttacked) {
-    if (result.shipSunk)       { AudioEngine.playSunk(); addBattleLog('\ud83d\udca5 You sunk their ' + result.shipSunk + ' at ' + coord + '!', 'sunk'); }
-    else if (result.hit)       { AudioEngine.playHit();  addBattleLog('\ud83d\udd25 Hit at ' + coord + '!' + (S.rules === 'classic' ? ' Fire again!' : ''), 'hit'); }
-    else                       { AudioEngine.playMiss(); addBattleLog('\ud83d\udca7 Miss at ' + coord + '.', 'miss'); }
+    if (result.shipSunk)       { AudioEngine.playSunk(); addBattleLog('\ud83d\udca5 You sunk their ' + result.shipSunk + ' at ' + coord + '!' + salvoSuffix, 'sunk'); }
+    else if (result.hit)       { AudioEngine.playHit();  addBattleLog('\ud83d\udd25 Hit at ' + coord + '!' + (S.rules === 'classic' ? ' Fire again!' : salvoSuffix), 'hit'); }
+    else                       { AudioEngine.playMiss(); addBattleLog('\ud83d\udca7 Miss at ' + coord + '.' + salvoSuffix, 'miss'); }
   } else {
     if (result.shipSunk)       { AudioEngine.playSunk(); addBattleLog('\ud83d\udc80 Opponent sunk your ' + result.shipSunk + ' at ' + coord + '!', 'sunk'); }
     else if (result.hit)       { AudioEngine.playHit();  addBattleLog('\ud83d\udd25 Opponent hit at ' + coord + '!', 'hit'); }

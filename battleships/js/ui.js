@@ -191,10 +191,14 @@ function addBattleLog(message, type) {
 
 // ── Turn indicator ────────────────────────────────────────────────────────────
 
-function setTurnIndicator(isMyTurn) {
+function setTurnIndicator(isMyTurn, shotsRemaining = null) {
   const el2 = document.getElementById('turn-indicator');
-  el2.textContent = isMyTurn ? '🎯 Your Turn — Fire!' : '⏳ Opponent\'s Turn…';
-  el2.className   = 'turn-indicator ' + (isMyTurn ? 'my-turn' : 'their-turn');
+  if (isMyTurn && shotsRemaining != null) {
+    el2.textContent = `🎯 Your Turn — ${shotsRemaining} shot${shotsRemaining === 1 ? '' : 's'} left`;
+  } else {
+    el2.textContent = isMyTurn ? '🎯 Your Turn — Fire!' : '⏳ Opponent\'s Turn…';
+  }
+  el2.className = 'turn-indicator ' + (isMyTurn ? 'my-turn' : 'their-turn');
 }
 
 // ── QR code generation ────────────────────────────────────────────────────────
