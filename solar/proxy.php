@@ -3,7 +3,14 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
 set_time_limit(120);
-require_once __DIR__ . '/config.php';
+// ── Solis Cloud API credentials ──
+define('SOLIS_KEY_ID',     '1300386381676683008');
+define('SOLIS_KEY_SECRET', '6d8bf199d09149bea5339f219347b372');
+define('SOLIS_API_URL',    'https://www.soliscloud.com:13333');
+
+// ── Solcast credentials ──
+define('SOLCAST_API_KEY',   '7Y7ZvkmpmPi3byFQC5LYZQ6pErY8MY6e');
+define('SOLCAST_RESOURCE',  '5b50-cdad-7f7c-abc1');
 
 // ── Cache directory ──
 define('CACHE_DIR', '/tmp/solar_cache/');
