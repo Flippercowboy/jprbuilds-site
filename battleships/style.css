@@ -382,6 +382,7 @@ kbd {
 .gameover-result .win  { display: block; font-size: 4rem; }
 .gameover-result .loss { display: block; font-size: 4rem; }
 .gameover-result p { font-size: 1.1rem; color: var(--text-muted); margin-top: 8px; }
+.gameover-history   { text-align: center; font-size: 0.9rem; color: var(--text-muted); margin: 4px 0 4px; }
 
 /* ── Home subtitle ──────────────────────────────────────────────────────────────────── */
 .home-subtitle {

@@ -10,7 +10,8 @@ const S = {
   roomCode:   null,
   playerNum:  null,   // 1 | 2  (null for host)
   rules:      'classic',
-  opponentId: null,
+  opponentId:   null,
+  opponentName: null,
   mode:       null,   // 'host' | 'player'
   phase:      'home', // home | lobby | spectator | placing | battle | gameover
 
@@ -706,8 +707,9 @@ async function transitionToBattle() {
     if (room.current_turn) break;
     await new Promise(r => setTimeout(r, 400));
   }
-  S.isMyTurn = !!(room && room.current_turn === S.playerId);
-  S.phase    = 'battle';
+  S.isMyTurn     = !!(room && room.current_turn === S.playerId);
+  S.opponentName = (room && (S.playerNum === 1 ? room.player2_name : room.player1_name)) || 'Opponent';
+  S.phase        = 'battle';
   if (_placementKeyHandler) {
     document.removeEventListener('keydown', _placementKeyHandler);
     _placementKeyHandler = null;
@@ -719,6 +721,7 @@ async function rejoinBattle(room) {
   const boards        = await dbGetBoards(S.roomId);
   const opponentEntry = boards.find(b => b.player_id !== S.playerId);
   const myEntry       = boards.find(b => b.player_id === S.playerId);
+  S.opponentName      = (S.playerNum === 1 ? room.player2_name : room.player1_name) || 'Opponent';
 
   if (!opponentEntry || !myEntry) {
     alert('Could not restore game state. Please start a new game.');
@@ -871,9 +874,32 @@ function showGameOver(won) {
     ? '<span class="win">\ud83c\udfc6</span><p>You Win!<br><small>All enemy ships sunk.</small></p>'
     : '<span class="loss">\ud83d\udc80</span><p>You Lose!<br><small>Your fleet was destroyed.</small></p>';
 
+  renderHeadToHead();
+
   document.getElementById('btn-play-again').onclick = () => {
     window.location.href = location.href.split('?')[0];
   };
+}
+
+async function renderHeadToHead() {
+  const historyEl = document.getElementById('gameover-history');
+  if (!historyEl || !S.opponentName) return;
+
+  try {
+    const myName = getPlayerName();
+    const games  = await dbGetLeaderboard();
+    const versus = games.filter(g =>
+      (g.player1_name === myName && g.player2_name === S.opponentName) ||
+      (g.player1_name === S.opponentName && g.player2_name === myName)
+    );
+    if (!versus.length) return;
+
+    const myWins  = versus.filter(g => g.winner_name === myName).length;
+    const oppWins = versus.filter(g => g.winner_name === S.opponentName).length;
+    historyEl.textContent = `You've beaten ${S.opponentName} ${myWins} time${myWins === 1 ? '' : 's'} (${S.opponentName}: ${oppWins})`;
+  } catch (_) {
+    // Head-to-head history is a nice-to-have \u2014 fail silently
+  }
 }
 
 // ── PRESENCE – opponent disconnected ─────────────────────────────────────────
