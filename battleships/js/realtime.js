@@ -88,6 +88,7 @@ function _initWS() {
       case 'move':           HANDLERS.onMove          && HANDLERS.onMove(payload);          break;
       case 'game_over':      HANDLERS.onGameOver      && HANDLERS.onGameOver(payload);      break;
       case 'presence_leave': HANDLERS.onPresenceLeave && HANDLERS.onPresenceLeave(payload); break;
+      case 'rematch_offer':  HANDLERS.onRematchOffer  && HANDLERS.onRematchOffer(payload);  break;
     }
   };
 

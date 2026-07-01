@@ -205,15 +205,18 @@ async function handleHostGame() {
   }
 }
 
+const RULES_BADGE_LABEL = {
+  classic: '\u2693 Classic Rules \u2013 hit again on a hit',
+  modern:  '\ud83d\udd04 Modern Rules \u2013 turns always alternate',
+  salvo:   '\ud83d\udca5 Salvo Rules \u2013 one shot per surviving ship',
+};
+
 function showLobby(room) {
   S.phase = 'lobby';
   showScreen('lobby');
   generateQR(room.room_code);
 
-  const badge = document.getElementById('rules-badge');
-  badge.textContent = S.rules === 'classic'
-    ? '\u2693 Classic Rules \u2013 hit again on a hit'
-    : '\ud83d\udd04 Modern Rules \u2013 turns always alternate';
+  document.getElementById('rules-badge').textContent = RULES_BADGE_LABEL[S.rules] || '';
 
   updateLobbyJoinCount(0);
 }
@@ -344,59 +347,61 @@ async function handlePlayerGame() {
 
   try {
     const room = await dbCreateAndJoinRoom(S.rules);
-
-    S.roomId    = room.id;
-    S.roomCode  = room.room_code;
-    S.playerNum = 1;
-    S.rules     = room.rules;
-    S.mode      = 'player';
-    S.opponentId = null;
-
-    HANDLERS.onPlayerJoined  = (payload) => {
-      // P2 just joined — save their ID and move to placement
-      if (!S.opponentId) S.opponentId = payload.playerId;
-      updateLobbyJoinCount(2); // brief "Both joined!" flash
-      setTimeout(initPlacementScreen, 800);
-    };
-    HANDLERS.onShipsReady    = onOpponentShipsReady;
-    HANDLERS.onMove          = onIncomingMove;
-    HANDLERS.onGameOver      = onGameOver;
-    HANDLERS.onPresenceLeave = onPresenceLeave;
-
-    rtSubscribe(S.roomId);
-
-    // Show the lobby with QR code for P2 to scan
-    S.phase = 'lobby';
-    showScreen('lobby');
-    document.getElementById('lobby-heading').textContent = 'Share this code with Player 2';
-    generateQR(room.room_code);
-    const badge = document.getElementById('rules-badge');
-    badge.textContent = S.rules === 'classic'
-      ? '\u2693 Classic Rules \u2013 hit again on a hit'
-      : '\ud83d\udd04 Modern Rules \u2013 turns always alternate';
-    updateLobbyJoinCount(1); // we are already player 1
-    document.getElementById('lobby-status').textContent = '\u23f3 Waiting for Player 2 to scan\u2026';
-    document.getElementById('lobby-status').className   = 'status-pill waiting';
-
-    // Poll fallback in case the realtime broadcast is missed
-    const poll = setInterval(async () => {
-      if (S.phase !== 'lobby') { clearInterval(poll); return; }
-      try {
-        const r = await dbGetRoom(S.roomId);
-        if (r.player2_id && !S.opponentId) {
-          clearInterval(poll);
-          S.opponentId = r.player2_id;
-          updateLobbyJoinCount(2);
-          setTimeout(initPlacementScreen, 800);
-        }
-      } catch (_) {}
-    }, 3000);
-
+    enterPlayerLobby(room, 'Share this code with Player 2');
   } catch (err) {
     btn.disabled    = false;
     btn.textContent = 'Play on this Device';
     alert(err.message);
   }
+}
+
+// Shared by "Play on this Device" and rematch: creates a room as P1, shows
+// the lobby with a QR code, and waits (via broadcast + poll fallback) for
+// Player 2 to join before moving on to ship placement.
+function enterPlayerLobby(room, lobbyHeading) {
+  S.roomId     = room.id;
+  S.roomCode   = room.room_code;
+  S.playerNum  = 1;
+  S.rules      = room.rules;
+  S.mode       = 'player';
+  S.opponentId = null;
+
+  HANDLERS.onPlayerJoined  = (payload) => {
+    // P2 just joined \u2014 save their ID and move to placement
+    if (!S.opponentId) S.opponentId = payload.playerId;
+    updateLobbyJoinCount(2); // brief "Both joined!" flash
+    setTimeout(initPlacementScreen, 800);
+  };
+  HANDLERS.onShipsReady    = onOpponentShipsReady;
+  HANDLERS.onMove          = onIncomingMove;
+  HANDLERS.onGameOver      = onGameOver;
+  HANDLERS.onPresenceLeave = onPresenceLeave;
+
+  rtSubscribe(S.roomId);
+
+  // Show the lobby with QR code for P2 to scan
+  S.phase = 'lobby';
+  showScreen('lobby');
+  document.getElementById('lobby-heading').textContent = lobbyHeading;
+  generateQR(room.room_code);
+  document.getElementById('rules-badge').textContent = RULES_BADGE_LABEL[S.rules] || '';
+  updateLobbyJoinCount(1); // we are already player 1
+  document.getElementById('lobby-status').textContent = '\u23f3 Waiting for Player 2 to scan\u2026';
+  document.getElementById('lobby-status').className   = 'status-pill waiting';
+
+  // Poll fallback in case the realtime broadcast is missed
+  const poll = setInterval(async () => {
+    if (S.phase !== 'lobby') { clearInterval(poll); return; }
+    try {
+      const r = await dbGetRoom(S.roomId);
+      if (r.player2_id && !S.opponentId) {
+        clearInterval(poll);
+        S.opponentId = r.player2_id;
+        updateLobbyJoinCount(2);
+        setTimeout(initPlacementScreen, 800);
+      }
+    } catch (_) {}
+  }, 3000);
 }
 
 // ── JOIN SCREEN (manual code entry – kept for entering a friend's code) ───────
@@ -880,7 +885,6 @@ function onGameOver(payload) {
 function showGameOver(won) {
   if (S.phase === 'gameover') return;
   S.phase = 'gameover';
-  rtUnsubscribe();
   if (won) AudioEngine.playWin(); else AudioEngine.playLose();
   showScreen('gameover');
 
@@ -890,9 +894,50 @@ function showGameOver(won) {
 
   renderHeadToHead();
 
-  document.getElementById('btn-play-again').onclick = () => {
-    window.location.href = location.href.split('?')[0];
+  const rematchStatusEl = document.getElementById('rematch-status');
+  rematchStatusEl.innerHTML = '';
+
+  const playAgainBtn = document.getElementById('btn-play-again');
+  playAgainBtn.disabled    = false;
+  playAgainBtn.textContent = 'Play Again';
+  playAgainBtn.onclick     = initiateRematch;
+
+  document.getElementById('btn-back-to-home').onclick = () => {
+    rtUnsubscribe();
+    initHomeScreen();
   };
+
+  // Still subscribed to this (finished) room, so a rematch offer from the
+  // opponent can arrive while both are sat on this screen.
+  HANDLERS.onRematchOffer = (payload) => {
+    if (S.phase !== 'gameover') return; // stale offer from an earlier game
+    rematchStatusEl.innerHTML = '';
+    rematchStatusEl.appendChild(el('span', '', `${payload.fromName || S.opponentName || 'Opponent'} wants a rematch!`));
+    const acceptBtn = el('button', 'btn-secondary small', 'Accept');
+    acceptBtn.style.marginLeft = '8px';
+    acceptBtn.onclick = () => joinViaUrl(payload.roomCode);
+    rematchStatusEl.appendChild(acceptBtn);
+  };
+}
+
+// "Play Again": create a fresh room as P1 and offer it to the opponent over
+// the broadcast channel of the room we're both still sat in post-game-over.
+async function initiateRematch() {
+  const btn = document.getElementById('btn-play-again');
+  btn.disabled    = true;
+  btn.textContent = 'Creating rematch\u2026';
+
+  try {
+    const oldRoomId = S.roomId;
+    const room = await dbCreateAndJoinRoom(S.rules);
+    await rtBroadcast('rematch_offer', { roomCode: room.room_code, fromName: getPlayerName() });
+    wsRequest('unsubscribe', { room_id: oldRoomId }).catch(() => {});
+    enterPlayerLobby(room, `Rematch! Share this code with ${S.opponentName || 'your opponent'}`);
+  } catch (err) {
+    btn.disabled    = false;
+    btn.textContent = 'Play Again';
+    alert(err.message);
+  }
 }
 
 async function renderHeadToHead() {

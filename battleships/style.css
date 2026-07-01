@@ -383,6 +383,8 @@ kbd {
 .gameover-result .loss { display: block; font-size: 4rem; }
 .gameover-result p { font-size: 1.1rem; color: var(--text-muted); margin-top: 8px; }
 .gameover-history   { text-align: center; font-size: 0.9rem; color: var(--text-muted); margin: 4px 0 4px; }
+.rematch-status { text-align: center; font-size: 0.9rem; color: var(--gold); min-height: 1.4em; margin-top: 8px; }
+.gameover-actions { display: flex; gap: 10px; margin-top: 14px; }
 
 /* ── Home subtitle ──────────────────────────────────────────────────────────────────── */
 .home-subtitle {
