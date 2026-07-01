@@ -498,7 +498,7 @@ function initPlacementScreen() {
   updateOpponentStatus();
   document.getElementById('placement-status').textContent = 'Tap a cell to position your ' + SHIPS[0].name + '.';
 
-  // ── Placement state ──────────────────────────────────────────────────────────
+  // ---- Placement state ----------------------------------------------------
   // stagingRow/Col: the cell the player has selected but not yet confirmed.
   // null = nothing selected yet for this ship.
   S.stagingRow = null;
@@ -506,6 +506,10 @@ function initPlacementScreen() {
 
   const grid    = document.getElementById('placement-grid');
   const btnConfirm = document.getElementById('btn-confirm-place');
+
+  // Drag-to-place state (additive \u2014 tap-then-Confirm below still works unchanged)
+  let _dragAnchor       = null;  // {row, col} where the drag/touch started
+  let _suppressNextClick = false; // swallow the synthetic click browsers fire after a drag-drop
 
   // Single function: updates both the confirm button and the status hint together
   function updatePlacementUI() {
@@ -530,8 +534,61 @@ function initPlacementScreen() {
     }
   }
 
+  // Places SHIPS[S.placingIndex] at (row, col) with the current S.horizontal
+  // orientation. Shared by the Confirm button and drag-to-place drop.
+  function confirmPlacement(row, col) {
+    const result = placeShipOnBoard(S.myBoard, SHIPS[S.placingIndex], row, col, S.horizontal);
+    if (!result) return false;
+
+    AudioEngine.playPlace();
+    S.myBoard = result.board;
+    const placedCells = result.cells; // save before index advances
+    S.myShips.push({ ...SHIPS[S.placingIndex], cells: result.cells, horizontal: S.horizontal, row, col });
+
+    // Reset staging for next ship
+    S.stagingRow = null;
+    S.stagingCol = null;
+    S.hoverRow   = null;
+    S.hoverCol   = null;
+    S.placingIndex++;
+
+    renderShipList(S.placingIndex);
+
+    if (S.placingIndex >= SHIPS.length) {
+      renderPlacementGrid(S.myBoard, null, null, null, S.horizontal, false);
+      btnConfirm.disabled    = true;
+      btnConfirm.textContent = '\u2713 Place Ship';
+      document.getElementById('btn-ready').disabled         = false;
+      document.getElementById('placement-status').textContent = '\u2705 All ships placed! Press Ready when done.';
+    } else {
+      renderPlacementGrid(S.myBoard, SHIPS[S.placingIndex], null, null, S.horizontal, false);
+      updatePlacementUI();
+    }
+    flashPlacedCells(placedCells); // flash AFTER grid re-render so elements exist
+    return true;
+  }
+
+  // Given where a drag started and the cell currently under the pointer,
+  // work out the ship's orientation (dominant axis of movement) and its
+  // top-left anchor cell (so dragging left/up still yields a valid anchor
+  // for getShipCells(), which always extends right/down).
+  function dragToPlacement(anchor, curRow, curCol) {
+    const dr = curRow - anchor.row;
+    const dc = curCol - anchor.col;
+    const horizontal = Math.abs(dc) >= Math.abs(dr);
+    return horizontal
+      ? { row: anchor.row, col: Math.min(anchor.col, curCol), horizontal: true }
+      : { row: Math.min(anchor.row, curRow), col: anchor.col, horizontal: false };
+  }
+
+  function cellFromPoint(clientX, clientY) {
+    const target = document.elementFromPoint(clientX, clientY);
+    return target && target.closest ? target.closest('[data-row]') : null;
+  }
+
   // Tap/click a cell: sets the staging position (no ship placed yet)
   grid.onclick = (e) => {
+    if (_suppressNextClick) { _suppressNextClick = false; return; }
     const cell = e.target.closest('[data-row]');
     if (!cell || S.placingIndex >= SHIPS.length) return;
     S.stagingRow = +cell.dataset.row;
@@ -542,7 +599,7 @@ function initPlacementScreen() {
 
   // Mouse hover (desktop): only moves preview if nothing is staged yet
   grid.onmouseover = (e) => {
-    if (S.stagingRow !== null) return;
+    if (_dragAnchor || S.stagingRow !== null) return;
     const cell = e.target.closest('[data-row]');
     if (!cell || S.placingIndex >= SHIPS.length) return;
     const r = +cell.dataset.row;
@@ -570,37 +627,47 @@ function initPlacementScreen() {
     }
   };
 
+  // ---- Drag-to-place (additive: press a cell, drag to choose position + orientation, release to drop) ----
+  grid.onpointerdown = (e) => {
+    if (S.placingIndex >= SHIPS.length) return;
+    const cell = e.target.closest('[data-row]');
+    if (!cell) return;
+    _dragAnchor = { row: +cell.dataset.row, col: +cell.dataset.col };
+    const { row, col, horizontal } = dragToPlacement(_dragAnchor, _dragAnchor.row, _dragAnchor.col);
+    renderPlacementGrid(S.myBoard, SHIPS[S.placingIndex], row, col, horizontal, true);
+  };
+
+  grid.onpointermove = (e) => {
+    if (!_dragAnchor || S.placingIndex >= SHIPS.length) return;
+    const cell = cellFromPoint(e.clientX, e.clientY);
+    if (!cell) return;
+    const { row, col, horizontal } = dragToPlacement(_dragAnchor, +cell.dataset.row, +cell.dataset.col);
+    renderPlacementGrid(S.myBoard, SHIPS[S.placingIndex], row, col, horizontal, true);
+  };
+
+  grid.onpointerup = (e) => {
+    if (!_dragAnchor || S.placingIndex >= SHIPS.length) { _dragAnchor = null; return; }
+    const anchor = _dragAnchor;
+    _dragAnchor = null;
+    const cell = cellFromPoint(e.clientX, e.clientY);
+    if (!cell) { renderPlacementGrid(S.myBoard, SHIPS[S.placingIndex], null, null, S.horizontal, false); return; }
+
+    const { row, col, horizontal } = dragToPlacement(anchor, +cell.dataset.row, +cell.dataset.col);
+    const valid = isValidPlacement(S.myBoard, getShipCells(row, col, SHIPS[S.placingIndex].size, horizontal));
+    if (valid) {
+      S.horizontal = horizontal;
+      document.getElementById('orientation-label').textContent = S.horizontal ? 'Horizontal \u2192' : 'Vertical \u2193';
+      _suppressNextClick = true;
+      confirmPlacement(row, col);
+    } else {
+      renderPlacementGrid(S.myBoard, SHIPS[S.placingIndex], null, null, S.horizontal, false);
+    }
+  };
+
   // Confirm button: locks the staged ship onto the board
   btnConfirm.onclick = () => {
     if (S.stagingRow === null || S.placingIndex >= SHIPS.length) return;
-    const result = placeShipOnBoard(S.myBoard, SHIPS[S.placingIndex], S.stagingRow, S.stagingCol, S.horizontal);
-    if (!result) return;
-
-    AudioEngine.playPlace();
-    S.myBoard = result.board;
-    const placedCells = result.cells; // save before index advances
-    S.myShips.push({ ...SHIPS[S.placingIndex], cells: result.cells, horizontal: S.horizontal, row: S.stagingRow, col: S.stagingCol });
-
-    // Reset staging for next ship
-    S.stagingRow = null;
-    S.stagingCol = null;
-    S.hoverRow   = null;
-    S.hoverCol   = null;
-    S.placingIndex++;
-
-    renderShipList(S.placingIndex);
-
-    if (S.placingIndex >= SHIPS.length) {
-      renderPlacementGrid(S.myBoard, null, null, null, S.horizontal, false);
-      btnConfirm.disabled    = true;
-      btnConfirm.textContent = '\u2713 Place Ship';
-      document.getElementById('btn-ready').disabled         = false;
-      document.getElementById('placement-status').textContent = '\u2705 All ships placed! Press Ready when done.';
-    } else {
-      renderPlacementGrid(S.myBoard, SHIPS[S.placingIndex], null, null, S.horizontal, false);
-      updatePlacementUI();
-    }
-    flashPlacedCells(placedCells); // flash AFTER grid re-render so elements exist
+    confirmPlacement(S.stagingRow, S.stagingCol);
   };
 
   document.getElementById('btn-rotate').onclick = () => {

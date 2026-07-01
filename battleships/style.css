@@ -261,6 +261,8 @@ kbd {
 .placement-hint { font-size: 0.82rem; color: var(--ocean); min-height: 20px; }
 
 .grid-wrap { overflow: auto; }
+/* Drag-to-place needs the browser to leave touch gestures on this grid alone */
+#placement-grid { touch-action: none; }
 
 /* ── The Grid ────────────────────────────────────────────────────────────── */
 .grid {
