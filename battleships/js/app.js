@@ -28,6 +28,8 @@ const S = {
   enemyRealBoard:    null,
   enemyDisplayBoard: null,
   isMyTurn:          false,
+  lastMyShot:        null, // {row, col} — most recent cell I fired at (enemy-board)
+  lastOpponentShot:  null, // {row, col} — most recent cell opponent fired at (my-board)
 
   // Spectator / host state
   specP1Id:          null,
@@ -766,8 +768,8 @@ function initBattleScreen() {
 }
 
 function refreshBattleBoards() {
-  renderGrid('my-board', S.myBoard, { showShips: true });
-  renderEnemyGrid('enemy-board', S.enemyDisplayBoard, S.isMyTurn, !S.isMyTurn, handleFire);
+  renderGrid('my-board', S.myBoard, { showShips: true, lastShot: S.lastOpponentShot });
+  renderEnemyGrid('enemy-board', S.enemyDisplayBoard, S.isMyTurn, !S.isMyTurn, handleFire, S.lastMyShot);
 }
 
 // ── BATTLE – firing ───────────────────────────────────────────────────────────
@@ -824,6 +826,8 @@ function onIncomingMove(payload) {
 }
 
 function updateBattleUI(row, col, result, iAttacked) {
+  if (iAttacked) S.lastMyShot       = { row, col };
+  else           S.lastOpponentShot = { row, col };
   refreshBattleBoards();
   setTurnIndicator(S.isMyTurn);
   const coord = coordLabel(row, col);

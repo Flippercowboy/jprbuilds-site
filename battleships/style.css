@@ -438,6 +438,24 @@ kbd {
   100% { background: var(--ship-green); border-color: #3d8a66; transform: scale(1); }
 }
 .cell-flash { animation: cellFlash 0.4s ease forwards; z-index: 2; }
+
+/* Most-recent-shot flash — hit vs miss get a different pulse */
+@keyframes hitShotFlash {
+  0%   { transform: scale(1.5); box-shadow: 0 0 0 6px rgba(224,48,59,0.4); }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+@keyframes missShotFlash {
+  0%   { transform: scale(0.5); opacity: 0.3; }
+  70%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.cell.hit-enemy.cell-shot-flash,
+.cell.hit-mine.cell-shot-flash,
+.cell.sunk-enemy.cell-shot-flash,
+.cell.sunk-mine.cell-shot-flash { animation: hitShotFlash 0.5s ease; z-index: 2; }
+.cell.miss-enemy.cell-shot-flash,
+.cell.miss-mine.cell-shot-flash { animation: missShotFlash 0.4s ease; }
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   :root { --cell-size: clamp(24px, 8.5vw, 32px); }

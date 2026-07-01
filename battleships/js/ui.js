@@ -29,7 +29,7 @@ function el(tag, className, text) {
 //   onCellClick – fn(row, col)
 
 function renderGrid(containerId, board, options = {}) {
-  const { showShips = true, clickable = false, locked = false, onCellClick } = options;
+  const { showShips = true, clickable = false, locked = false, onCellClick, lastShot = null } = options;
   const container = document.getElementById(containerId);
   container.innerHTML = '';
   if (locked) container.classList.add('locked');
@@ -49,8 +49,9 @@ function renderGrid(containerId, board, options = {}) {
     container.appendChild(rowHdr);
 
     for (let c = 0; c < 10; c++) {
-      const cell  = board[r][c];
-      const div   = el('div', buildCellClass(cell, showShips));
+      const cell    = board[r][c];
+      const isLast  = lastShot && lastShot.row === r && lastShot.col === c;
+      const div     = el('div', buildCellClass(cell, showShips, isLast));
       div.dataset.row = r;
       div.dataset.col = c;
 
@@ -62,23 +63,25 @@ function renderGrid(containerId, board, options = {}) {
   }
 }
 
-function buildCellClass(cell, showShips) {
+function buildCellClass(cell, showShips, isLastShot) {
   const classes = ['cell'];
   if (showShips && cell.shipId && !cell.hit) classes.push('has-ship');
-  if (cell.hit  && cell.shipId)  classes.push('hit-mine');
+  if (cell.hit  && cell.shipId)  classes.push(cell.sunk ? 'sunk-mine' : 'hit-mine');
   if (cell.hit  && !cell.shipId) classes.push('miss-mine');
+  if (cell.hit  && isLastShot)   classes.push('cell-shot-flash');
   return classes.join(' ');
 }
 
 // Build class for the enemy (attack) grid – ships are hidden until hit.
-function buildEnemyCellClass(cell) {
+function buildEnemyCellClass(cell, isLastShot) {
   const classes = ['cell'];
-  if (cell.hit && cell.shipId)  classes.push('hit-enemy');
+  if (cell.hit && cell.shipId)  classes.push(cell.sunk ? 'sunk-enemy' : 'hit-enemy');
   if (cell.hit && !cell.shipId) classes.push('miss-enemy');
+  if (cell.hit && isLastShot)   classes.push('cell-shot-flash');
   return classes.join(' ');
 }
 
-function renderEnemyGrid(containerId, displayBoard, clickable, locked, onCellClick) {
+function renderEnemyGrid(containerId, displayBoard, clickable, locked, onCellClick, lastShot = null) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
   if (locked) container.classList.add('locked');
@@ -92,8 +95,9 @@ function renderEnemyGrid(containerId, displayBoard, clickable, locked, onCellCli
   for (let r = 0; r < 10; r++) {
     container.appendChild(el('div', 'grid-header row-header', String(r + 1)));
     for (let c = 0; c < 10; c++) {
-      const cell = displayBoard[r][c];
-      const div  = el('div', buildEnemyCellClass(cell));
+      const cell   = displayBoard[r][c];
+      const isLast = lastShot && lastShot.row === r && lastShot.col === c;
+      const div    = el('div', buildEnemyCellClass(cell, isLast));
       div.dataset.row = r;
       div.dataset.col = c;
 
