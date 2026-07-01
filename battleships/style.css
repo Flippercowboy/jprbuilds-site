@@ -317,6 +317,10 @@ kbd {
 .cell.miss-mine   { background: var(--miss-blue); border-color: #3a6a8a; }
 .cell.miss-mine::after { content: '○'; color: rgba(255,255,255,0.7); font-size: 0.8em; }
 
+/* Fully-sunk ship — distinct from a lone hit cell */
+.cell.sunk-enemy, .cell.sunk-mine { background: #3a1216; border-color: #7a1f28; }
+.cell.sunk-enemy::after, .cell.sunk-mine::after { content: '☠'; color: #ff8f9e; font-size: 0.85em; }
+
 .attack-grid .cell:not(.hit-enemy):not(.miss-enemy) { cursor: crosshair; }
 .attack-grid .cell:not(.hit-enemy):not(.miss-enemy):hover { background: rgba(26,159,212,0.25); border-color: var(--ocean); transform: scale(1.1); z-index: 1; }
 .attack-grid.locked .cell { cursor: not-allowed; }

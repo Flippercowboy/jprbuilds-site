@@ -728,6 +728,7 @@ async function rejoinBattle(room) {
 
   S.enemyRealBoard    = opponentEntry.board;
   S.enemyDisplayBoard = createEmptyBoard();
+  S.myBoard           = myEntry.board;
 
   try {
     const moves = await dbGetMoves(S.roomId);
@@ -745,7 +746,8 @@ async function rejoinBattle(room) {
     });
   } catch (_) {}
 
-  S.myBoard  = myEntry.board;
+  markSunkShips(S.enemyDisplayBoard, S.enemyRealBoard);
+  markSunkShips(S.myBoard, S.myBoard);
   S.isMyTurn = (room.current_turn === S.playerId);
   S.phase    = 'battle';
   initBattleScreen();
@@ -786,6 +788,11 @@ async function handleFire(row, col) {
     shipId: result.hit ? S.enemyRealBoard[row][col].shipId : null,
     hit: true,
   };
+  if (result.sunkCells) {
+    result.sunkCells.forEach(({ row: r, col: c }) => {
+      S.enemyDisplayBoard[r][c] = { ...S.enemyDisplayBoard[r][c], sunk: true };
+    });
+  }
 
   let nextTurn;
   if (S.rules === 'classic' && result.hit && !result.gameOver) {
@@ -800,7 +807,7 @@ async function handleFire(row, col) {
     dbRecordMove(S.roomId, S.playerId, row, col, result.hit, result.shipSunk),
     rtBroadcast('move', {
       attackerId: S.playerId, row, col,
-      hit: result.hit, shipSunk: result.shipSunk,
+      hit: result.hit, shipSunk: result.shipSunk, sunkCells: result.sunkCells,
       gameOver: result.gameOver, nextTurn,
     }),
   ]);
@@ -818,8 +825,13 @@ async function handleFire(row, col) {
 // ── BATTLE – incoming move ────────────────────────────────────────────────────
 
 function onIncomingMove(payload) {
-  const { row, col, hit, shipSunk, gameOver, nextTurn } = payload;
+  const { row, col, hit, shipSunk, sunkCells, gameOver, nextTurn } = payload;
   if (S.myBoard[row][col]) S.myBoard[row][col].hit = true;
+  if (sunkCells) {
+    sunkCells.forEach(({ row: r, col: c }) => {
+      if (S.myBoard[r] && S.myBoard[r][c]) S.myBoard[r][c].sunk = true;
+    });
+  }
   S.isMyTurn = (nextTurn === S.playerId);
   updateBattleUI(row, col, { hit, shipSunk, gameOver }, false);
   if (gameOver) showGameOver(false);

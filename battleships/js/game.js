@@ -88,6 +88,7 @@ function processShot(board, row, col) {
   const shipId = newBoard[row][col].shipId;
 
   let shipSunk  = null;
+  let sunkCells = null;
   let gameOver  = false;
 
   if (hit) {
@@ -95,13 +96,36 @@ function processShot(board, row, col) {
     const sunk = newBoard.flat().every(c => c.shipId !== shipId || c.hit);
     if (sunk) {
       const def = SHIPS.find(s => s.id === shipId);
-      shipSunk = def ? def.name : shipId;
+      shipSunk  = def ? def.name : shipId;
+      sunkCells = getShipCellsById(newBoard, shipId);
     }
     // Game over if every ship cell on the board is hit
     gameOver = newBoard.flat().every(c => !c.shipId || c.hit);
   }
 
-  return { board: newBoard, hit, shipSunk, gameOver, alreadyFired: false };
+  return { board: newBoard, hit, shipSunk, sunkCells, gameOver, alreadyFired: false };
+}
+
+// Returns every {row, col} on board whose cell belongs to the given shipId.
+function getShipCellsById(board, shipId) {
+  const cells = [];
+  board.forEach((rowCells, r) => {
+    rowCells.forEach((cell, c) => {
+      if (cell.shipId === shipId) cells.push({ row: r, col: c });
+    });
+  });
+  return cells;
+}
+
+// Marks .sunk = true on every cell of any fully-hit ship. Used to rebuild
+// sunk state on reconnect, where only individual hit markers are replayed.
+function markSunkShips(displayBoard, realBoard) {
+  SHIPS.forEach(ship => {
+    const cells = getShipCellsById(realBoard, ship.id);
+    if (cells.length && cells.every(({ row, col }) => displayBoard[row][col].hit)) {
+      cells.forEach(({ row, col }) => { displayBoard[row][col].sunk = true; });
+    }
+  });
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────────
