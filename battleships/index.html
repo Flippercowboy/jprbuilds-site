@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Battleships — jprbuilds.com</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2" />
   <style>
     .site-back-link {
       position: fixed;
@@ -232,13 +232,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <!-- App – order matters: config → game → db → realtime → ui → app -->
-  <script src="js/config.js"></script>
-  <script src="js/game.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/realtime.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/app.js"></script>
+  <!-- ?v= bumped whenever any of these files change, so a returning visitor's
+       browser can't end up with a stale copy of just one of them (a JS file
+       here has no build-time hash, so without this a partial cache mismatch
+       can cause "X is not defined" errors after a deploy). -->
+  <script src="js/config.js?v=2"></script>
+  <script src="js/game.js?v=2"></script>
+  <script src="js/db.js?v=2"></script>
+  <script src="js/realtime.js?v=2"></script>
+  <script src="js/ui.js?v=2"></script>
+  <script src="js/audio.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
 
 </body>
 </html>
