@@ -139,6 +139,12 @@
 const PROXY = '/strava/proxy.php';
 let map = null, routeLayer = null, hrChart = null, altChart = null, paceChart = null;
 
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // ── Formatters ───────────────────────────────────────────────────────────────
 function fPace(mps) {
   if (!mps) return '—';
@@ -224,11 +230,22 @@ function drawRoute(streams) {
   const distData = streams.distance?.data;
   if (!latlng || !latlng.length) return;
 
-  // HR-coloured route segments
+  // HR-coloured route, merging consecutive points of the same zone colour into
+  // a single polyline (hrColor buckets into a handful of discrete colours, so this
+  // avoids creating one Leaflet layer per raw GPS sample on long runs).
   const segs = [];
-  for (let i = 0; i < latlng.length - 1; i++) {
-    segs.push(L.polyline([latlng[i], latlng[i+1]], { color: hr ? hrColor(hr[i]) : '#a78bfa', weight: 4, opacity: 0.9 }));
+  let segPoints = [latlng[0]];
+  let segColor  = hr ? hrColor(hr[0]) : '#a78bfa';
+  for (let i = 1; i < latlng.length; i++) {
+    const color = hr ? hrColor(hr[i]) : '#a78bfa';
+    if (color !== segColor) {
+      segs.push(L.polyline(segPoints, { color: segColor, weight: 4, opacity: 0.9 }));
+      segPoints = [latlng[i - 1]];
+      segColor  = color;
+    }
+    segPoints.push(latlng[i]);
   }
+  segs.push(L.polyline(segPoints, { color: segColor, weight: 4, opacity: 0.9 }));
   routeLayer = L.layerGroup(segs).addTo(map);
   map.fitBounds(L.latLngBounds(latlng), { padding: [24, 24] });
 
@@ -375,7 +392,7 @@ function renderDetail(a, streams, weather, similar, parkrun) {
   // ── Inject HTML ──
   document.getElementById('detailArea').innerHTML = `
     <div class="act-header">
-      <div class="act-name">${a.name}</div>
+      <div class="act-name">${escapeHtml(a.name)}</div>
       <div class="act-date">${fDate(a.start_date_local)} at ${timeStr}</div>
     </div>
     <div class="hero-stats">
@@ -399,8 +416,8 @@ function renderDetail(a, streams, weather, similar, parkrun) {
       ${weatherHTML}
       ${parkrunHTML}
       <div class="meta-row">
-        ${a.gear ? `<div class="meta-chip">👟 ${a.gear.name} · ${(a.gear.distance/1000).toFixed(0)}km on shoe</div>` : ''}
-        ${a.device_name ? `<div class="meta-chip">📱 ${a.device_name}</div>` : ''}
+        ${a.gear ? `<div class="meta-chip">👟 ${escapeHtml(a.gear.name)} · ${(a.gear.distance/1000).toFixed(0)}km on shoe</div>` : ''}
+        ${a.device_name ? `<div class="meta-chip">📱 ${escapeHtml(a.device_name)}</div>` : ''}
       </div>
     </div>
     <div class="splits-map-section">
@@ -480,11 +497,12 @@ const id = new URLSearchParams(location.search).get('id');
 if (!id) {
   document.getElementById('detailArea').innerHTML = '<div class="loading">No activity specified.</div>';
 } else {
+  const encId = encodeURIComponent(id);
   Promise.all([
-    fetch(`${PROXY}?action=activity&id=${id}`),
-    fetch(`${PROXY}?action=streams&id=${id}`),
-    fetch(`${PROXY}?action=weather&id=${id}`),
-    fetch(`${PROXY}?action=similar&id=${id}`)
+    fetch(`${PROXY}?action=activity&id=${encId}`),
+    fetch(`${PROXY}?action=streams&id=${encId}`),
+    fetch(`${PROXY}?action=weather&id=${encId}`),
+    fetch(`${PROXY}?action=similar&id=${encId}`)
   ]).then(async ([ar, sr, wr, simr]) => {
     const activity    = await ar.json();
     const streams     = await sr.json();
@@ -494,7 +512,7 @@ if (!id) {
     const isRunType   = activity.type === 'Run' || activity.type === 'VirtualRun';
     const actDate     = (activity.start_date_local || '').slice(0, 10);
     const parkrun     = isRunType && actDate
-      ? await fetch(`${PROXY}?action=parkrun&date=${actDate}`).then(r => r.json()).catch(() => null)
+      ? await fetch(`${PROXY}?action=parkrun&date=${encodeURIComponent(actDate)}`).then(r => r.json()).catch(() => null)
       : null;
     document.title    = `${activity.name} — jprbuilds`;
     renderDetail(activity, streams, weather, similar, parkrun);

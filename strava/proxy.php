@@ -58,8 +58,9 @@ if ($action === 'activities') {
         $rows = $pdo->query("SELECT * FROM strava_activities ORDER BY start_date DESC")->fetchAll();
         echo json_encode(array_map('db_row_to_activity', $rows));
     } catch (Throwable $e) {
+        error_log('strava/proxy.php activities: ' . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'DB error: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Something went wrong loading activities']);
     }
     exit;
 }
@@ -197,7 +198,10 @@ if ($action === 'similar') {
             $r['total_elevation_gain'] = (float)$r['total_elevation_gain'];
         }
         echo json_encode($rows);
-    } catch (Exception $e) { echo json_encode([]); }
+    } catch (Exception $e) {
+        error_log('strava/proxy.php similar: ' . $e->getMessage());
+        echo json_encode([]);
+    }
     exit;
 }
 
@@ -222,7 +226,10 @@ if ($action === 'parkrun') {
             return $row;
         }, $rows);
         echo json_encode($rows ?: []);
-    } catch (Exception $e) { echo json_encode([]); }
+    } catch (Exception $e) {
+        error_log('strava/proxy.php parkrun: ' . $e->getMessage());
+        echo json_encode([]);
+    }
     exit;
 }
 
@@ -231,7 +238,10 @@ if ($action === 'parkrun_dates') {
         $pdo  = get_db();
         $rows = $pdo->query("SELECT run_date FROM parkrun_results ORDER BY run_date")->fetchAll(PDO::FETCH_COLUMN);
         echo json_encode($rows);
-    } catch (Exception $e) { echo json_encode([]); }
+    } catch (Exception $e) {
+        error_log('strava/proxy.php parkrun_dates: ' . $e->getMessage());
+        echo json_encode([]);
+    }
     exit;
 }
 
