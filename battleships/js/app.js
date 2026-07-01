@@ -91,6 +91,7 @@ function initHomeScreen() {
 
   document.getElementById('btn-host-game').onclick   = handleHostGame;
   document.getElementById('btn-join-game').onclick   = handlePlayerGame;
+  document.getElementById('btn-join-code').onclick   = initJoinScreen;
   document.getElementById('btn-leaderboard').onclick = initLeaderboardScreen;
   document.getElementById('btn-change-player').onclick = () => {
     localStorage.removeItem('bs_player_name');
@@ -566,7 +567,7 @@ function initPlacementScreen() {
     const result = placeShipOnBoard(S.myBoard, SHIPS[S.placingIndex], S.stagingRow, S.stagingCol, S.horizontal);
     if (!result) return;
 
-    Audio.playPlace();
+    AudioEngine.playPlace();
     S.myBoard = result.board;
     const placedCells = result.cells; // save before index advances
     S.myShips.push({ ...SHIPS[S.placingIndex], cells: result.cells, horizontal: S.horizontal, row: S.stagingRow, col: S.stagingCol });
@@ -827,13 +828,13 @@ function updateBattleUI(row, col, result, iAttacked) {
   setTurnIndicator(S.isMyTurn);
   const coord = coordLabel(row, col);
   if (iAttacked) {
-    if (result.shipSunk)       { Audio.playSunk(); addBattleLog('\ud83d\udca5 You sunk their ' + result.shipSunk + ' at ' + coord + '!', 'sunk'); }
-    else if (result.hit)       { Audio.playHit();  addBattleLog('\ud83d\udd25 Hit at ' + coord + '!' + (S.rules === 'classic' ? ' Fire again!' : ''), 'hit'); }
-    else                       { Audio.playMiss(); addBattleLog('\ud83d\udca7 Miss at ' + coord + '.', 'miss'); }
+    if (result.shipSunk)       { AudioEngine.playSunk(); addBattleLog('\ud83d\udca5 You sunk their ' + result.shipSunk + ' at ' + coord + '!', 'sunk'); }
+    else if (result.hit)       { AudioEngine.playHit();  addBattleLog('\ud83d\udd25 Hit at ' + coord + '!' + (S.rules === 'classic' ? ' Fire again!' : ''), 'hit'); }
+    else                       { AudioEngine.playMiss(); addBattleLog('\ud83d\udca7 Miss at ' + coord + '.', 'miss'); }
   } else {
-    if (result.shipSunk)       { Audio.playSunk(); addBattleLog('\ud83d\udc80 Opponent sunk your ' + result.shipSunk + ' at ' + coord + '!', 'sunk'); }
-    else if (result.hit)       { Audio.playHit();  addBattleLog('\ud83d\udd25 Opponent hit at ' + coord + '!', 'hit'); }
-    else                       { Audio.playMiss(); addBattleLog('\ud83d\udca7 Opponent missed at ' + coord + '.', 'miss'); }
+    if (result.shipSunk)       { AudioEngine.playSunk(); addBattleLog('\ud83d\udc80 Opponent sunk your ' + result.shipSunk + ' at ' + coord + '!', 'sunk'); }
+    else if (result.hit)       { AudioEngine.playHit();  addBattleLog('\ud83d\udd25 Opponent hit at ' + coord + '!', 'hit'); }
+    else                       { AudioEngine.playMiss(); addBattleLog('\ud83d\udca7 Opponent missed at ' + coord + '.', 'miss'); }
   }
 }
 
@@ -847,7 +848,7 @@ function showGameOver(won) {
   if (S.phase === 'gameover') return;
   S.phase = 'gameover';
   rtUnsubscribe();
-  if (won) Audio.playWin(); else Audio.playLose();
+  if (won) AudioEngine.playWin(); else AudioEngine.playLose();
   showScreen('gameover');
 
   document.getElementById('gameover-result').innerHTML = won

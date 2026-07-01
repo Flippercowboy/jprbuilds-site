@@ -2,7 +2,7 @@
 // audio.js  –  Synthesised sound effects via Web Audio API (no audio files)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Audio = (() => {
+const AudioEngine = (() => {
   let ctx = null;
 
   function getCtx() {
