@@ -100,17 +100,6 @@
 
     #last-updated, #refresh-countdown { font-size: .75rem; color: var(--muted); }
 
-    .settings-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 8px; padding: 6px 12px;
-      cursor: pointer; font-size: .8rem;
-      transition: all .2s;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .settings-btn:hover { color: var(--text); border-color: var(--purple); }
-
     /* ── MAIN ── */
     main { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
 
@@ -306,7 +295,6 @@
       <div class="live-dot"></div>
       <span id="live-text">Connecting…</span>
     </div>
-    <button class="settings-btn" onclick="openSettings()">⚙ Settings</button>
   </div>
 </header>
 
@@ -570,9 +558,6 @@ let yearlyChartInstance  = null;
 let monthlyDataLoaded    = false;
 
 initDashboard();
-
-function saveSettings() {}
-function openSettings() {}
 
 let stateMap = {};
 
