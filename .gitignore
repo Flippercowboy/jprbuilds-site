@@ -2,3 +2,5 @@
 strava/config.php
 strava/gmail_credentials.php
 strava/cache/
+solar/config.php
+.claude/

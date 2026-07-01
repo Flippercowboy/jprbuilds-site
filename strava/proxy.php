@@ -57,7 +57,7 @@ if ($action === 'activities') {
 
         $rows = $pdo->query("SELECT * FROM strava_activities ORDER BY start_date DESC")->fetchAll();
         echo json_encode(array_map('db_row_to_activity', $rows));
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => 'DB error: ' . $e->getMessage()]);
     }

@@ -25,7 +25,6 @@ switch ($action) {
     case 'states':   echo json_encode(getSolisStates());     break;
     case 'forecast': echo json_encode(getSolcastForecast()); break;
     case 'monthly':  echo json_encode(getSolisMonthly());    break;
-    case 'debug':    echo json_encode(getSolisRawDetail());  break;
     default:         echo json_encode(['error' => 'Unknown action']); break;
 }
 
