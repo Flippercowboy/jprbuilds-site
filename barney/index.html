@@ -179,6 +179,11 @@
     }
     .tag-maths { background: #1D4ED8; color: #BFDBFE; }
     .tag-english { background: #065F46; color: #A7F3D0; }
+    .tag-stretch {
+      display: inline-block; padding: 4px 14px; border-radius: 50px; font-size: 0.85rem;
+      font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+      margin-left: 8px; background: linear-gradient(135deg, #F59E0B, #EC4899); color: #fff;
+    }
 
     .quiz-question { font-size: 1.6rem; font-weight: 800; text-align: center; line-height: 1.3; margin-bottom: 24px; }
     .quiz-dragon { font-size: 60px; text-align: center; transition: transform 0.2s; }
@@ -369,7 +374,7 @@
   <div class="streak-counter" id="streak-counter"></div>
 
   <div class="card" style="text-align:center">
-    <div><span class="quiz-subject-tag" id="subject-tag">Maths</span></div>
+    <div><span class="quiz-subject-tag" id="subject-tag">Maths</span><span class="tag-stretch" id="stretch-tag" style="display:none">💪 Stretch</span></div>
     <div class="quiz-question" id="quiz-question">Loading...</div>
 
     <!-- Hear word button (spelling/phonics only) -->
@@ -594,6 +599,7 @@ const CHILDREN = {
     storageKey: 'barney_state',
     firebasePath: 'barney',
     sessionSize: 10,        // 5 maths + 5 english
+    stretchRatio: 0.4,      // 2 of each 5 are Year 3 — raise as he improves
     generateSession: generateBarneySession,
     voice: BARNEY_VOICE,
     voiceId: 'xsiB5fGhEtknnqzudCO6'
@@ -818,6 +824,221 @@ const TIMES = [
   { display: 'half past 12', question: 'What time does this clock show? 🕧', answer: 'half past 12', options: ['12 o\'clock','half past 11','half past 12','half past 1'] },
   { display: '5 o\'clock', question: 'What time does this clock show? 🕔', answer: '5 o\'clock', options: ['4 o\'clock','half past 5','5 o\'clock','6 o\'clock'] }
 ];
+
+// ── YEAR 3 STRETCH CONTENT ──
+// Mixed into Barney's sessions at CHILDREN.barney.stretchRatio.
+
+// Curated: real misspellings children actually make, not scrambled letters.
+const YEAR3_SPELLINGS = [
+  { word: 'accident',   wrong: ['acident','accidant','acsident'] },
+  { word: 'actually',   wrong: ['actualy','actully','acturally'] },
+  { word: 'address',    wrong: ['adress','addres','adres'] },
+  { word: 'answer',     wrong: ['anser','answere','ansewr'] },
+  { word: 'appear',     wrong: ['apear','appeare','apeare'] },
+  { word: 'arrive',     wrong: ['arive','arriev','arrivve'] },
+  { word: 'believe',    wrong: ['beleive','belive','beleve'] },
+  { word: 'bicycle',    wrong: ['bycicle','bicicle','bicylce'] },
+  { word: 'build',      wrong: ['bild','buld','biuld'] },
+  { word: 'busy',       wrong: ['bussy','bizzy','buzy'] },
+  { word: 'calendar',   wrong: ['calender','calandar','calenndar'] },
+  { word: 'caught',     wrong: ['cought','caugt','caut'] },
+  { word: 'certain',    wrong: ['certian','certin','sertain'] },
+  { word: 'circle',     wrong: ['cirlce','circel','sircle'] },
+  { word: 'complete',   wrong: ['compleate','complet','compleet'] },
+  { word: 'decide',     wrong: ['descide','deside','decid'] },
+  { word: 'describe',   wrong: ['discribe','describ','desribe'] },
+  { word: 'different',  wrong: ['diffrent','differnt','diferent'] },
+  { word: 'difficult',  wrong: ['dificult','difficut','diffcult'] },
+  { word: 'disappear',  wrong: ['dissapear','disapear','dissappear'] },
+  { word: 'early',      wrong: ['erly','earley','earlie'] },
+  { word: 'eight',      wrong: ['eght','aight','eigth'] },
+  { word: 'enough',     wrong: ['enuff','enogh','enouth'] },
+  { word: 'exercise',   wrong: ['excercise','exersize','exercize'] },
+  { word: 'famous',     wrong: ['famouse','fameous','famus'] },
+  { word: 'favourite',  wrong: ['favorite','favourate','faverite'] },
+  { word: 'February',   wrong: ['Febuary','Feburary','Februrary'] },
+  { word: 'forward',    wrong: ['foward','forwerd','forwward'] },
+  { word: 'fruit',      wrong: ['frut','fruite','friut'] },
+  { word: 'grammar',    wrong: ['grammer','gramar','grammmar'] },
+  { word: 'guard',      wrong: ['gaurd','gard','guarde'] },
+  { word: 'height',     wrong: ['hight','heigth','heihgt'] },
+  { word: 'imagine',    wrong: ['imagin','immagine','imagene'] },
+  { word: 'important',  wrong: ['importent','impotant','imporant'] },
+  { word: 'interest',   wrong: ['intrest','interst','intarest'] },
+  { word: 'island',     wrong: ['iland','islend','isand'] },
+  { word: 'length',     wrong: ['lenght','lengh','lenth'] },
+  { word: 'library',    wrong: ['libary','librery','libraray'] },
+  { word: 'medicine',   wrong: ['medecine','medicin','medisine'] },
+  { word: 'minute',     wrong: ['minite','minut','minuet'] },
+  { word: 'natural',    wrong: ['naturel','nateral','natrual'] },
+  { word: 'naughty',    wrong: ['naugty','nawty','noughty'] },
+  { word: 'opposite',   wrong: ['opposit','oposite','oppossite'] },
+  { word: 'perhaps',    wrong: ['perhapse','prehaps','perhabs'] },
+  { word: 'popular',    wrong: ['populer','poplar','popualr'] },
+  { word: 'position',   wrong: ['posision','postion','positon'] },
+  { word: 'possible',   wrong: ['possable','posible','possibal'] },
+  { word: 'potatoes',   wrong: ['potatos','potatoe','pottatoes'] },
+  { word: 'probably',   wrong: ['probaly','probly','probabley'] },
+  { word: 'promise',    wrong: ['promiss','promice','promis'] },
+  { word: 'quarter',    wrong: ['quater','kwarter','quarterr'] },
+  { word: 'question',   wrong: ['queston','questin','kwestion'] },
+  { word: 'remember',   wrong: ['remeber','rember','remmember'] },
+  { word: 'sentence',   wrong: ['sentance','sentense','sentnce'] },
+  { word: 'separate',   wrong: ['seperate','seprate','separete'] },
+  { word: 'special',    wrong: ['specail','speshal','specal'] },
+  { word: 'straight',   wrong: ['strait','straght','striaght'] },
+  { word: 'strength',   wrong: ['strenght','strengh','strenth'] },
+  { word: 'surprise',   wrong: ['suprise','surprize','surprice'] },
+  { word: 'thought',    wrong: ['thaught','thout','thoght'] },
+  { word: 'weight',     wrong: ['wieght','weght','waight'] },
+  { word: 'women',      wrong: ['wemen','womin','wimen'] }
+];
+
+const HOMOPHONES = [
+  { q: 'Choose the correct word: "They left ___ coats on the peg."', correct: 'their', options: ['their','there','they\'re','thier'] },
+  { q: 'Choose the correct word: "We are going ___ on Friday."', correct: 'there', options: ['their','there','they\'re','thare'] },
+  { q: 'Choose the correct word: "Did you ___ that noise?"', correct: 'hear', options: ['hear','here','heer','hier'] },
+  { q: 'Choose the correct word: "Please put the box over ___."', correct: 'here', options: ['hear','here','heer','hear\''] },
+  { q: 'Choose the correct word: "Don\'t ___ the glass!"', correct: 'break', options: ['break','brake','braek','brayk'] },
+  { q: 'Choose the correct word: "The ___ was cold and wet."', correct: 'weather', options: ['weather','whether','wether','weathar'] },
+  { q: 'Choose the correct word: "He ___ the ball over the fence."', correct: 'threw', options: ['threw','through','thru','throo'] },
+  { q: 'Choose the correct word: "We walked ___ the tunnel."', correct: 'through', options: ['threw','through','thruogh','throught'] },
+  { q: 'Choose the correct word: "The knight rode his ___."', correct: 'horse', options: ['horse','hoarse','hourse','hors'] },
+  { q: 'Choose the correct word: "I ate a ___ of cake."', correct: 'piece', options: ['piece','peace','peice','pease'] }
+];
+
+const PREFIX_SUFFIX = [
+  { q: 'Add a prefix to make the opposite of "happy":', correct: 'unhappy', options: ['unhappy','dishappy','mishappy','rehappy'] },
+  { q: 'Add a prefix to make the opposite of "agree":', correct: 'disagree', options: ['unagree','disagree','misagree','reagree'] },
+  { q: 'Which word means "to build again"?', correct: 'rebuild', options: ['rebuild','unbuild','disbuild','misbuild'] },
+  { q: 'Which word means "to spell wrongly"?', correct: 'misspell', options: ['misspell','unspell','disspell','respell'] },
+  { q: 'Which word means "to appear again"?', correct: 'reappear', options: ['reappear','unappear','misappear','disappear'] },
+  { q: 'Add the suffix "-ly" to "quick":', correct: 'quickly', options: ['quickly','quicky','quicklly','quickley'] },
+  { q: 'Add the suffix "-ly" to "gentle":', correct: 'gently', options: ['gently','gentlely','gentley','gentlly'] },
+  { q: 'Add the suffix "-ful" to "care":', correct: 'careful', options: ['careful','carefull','carful','carefule'] },
+  { q: 'Which word means "not possible"?', correct: 'impossible', options: ['impossible','unpossible','dispossible','mispossible'] },
+  { q: 'Which prefix means "under"?', correct: 'sub-', options: ['sub-','super-','anti-','auto-'] }
+];
+
+const WORD_CLASS = [
+  { q: 'Which word is the adjective?\n"The enormous dog barked loudly."', correct: 'enormous', options: ['enormous','dog','barked','loudly'] },
+  { q: 'Which word is the verb?\n"Sam quickly opened the heavy door."', correct: 'opened', options: ['Sam','quickly','opened','heavy'] },
+  { q: 'Which word is the adverb?\n"She sang beautifully at the concert."', correct: 'beautifully', options: ['She','sang','beautifully','concert'] },
+  { q: 'Which word is the noun?\n"The clever fox ran away."', correct: 'fox', options: ['clever','fox','ran','away'] },
+  { q: 'Which word is the conjunction?\n"I was tired but I kept going."', correct: 'but', options: ['was','tired','but','kept'] },
+  { q: 'Which word is the preposition?\n"The cat slept under the table."', correct: 'under', options: ['cat','slept','under','table'] },
+  { q: 'Which word is the adverb?\n"He waited patiently for the bus."', correct: 'patiently', options: ['waited','patiently','for','bus'] },
+  { q: 'Which word is the adjective?\n"A tiny bird sat on the branch."', correct: 'tiny', options: ['tiny','bird','sat','branch'] }
+];
+
+const PUNCTUATION_Y3 = [
+  { q: 'Which sentence uses the apostrophe correctly?', correct: 'That is Sam\'s bike.', options: ['That is Sams bike.','That is Sam\'s bike.','That is Sams\' bike.','That is Sam\'s\' bike.'] },
+  { q: 'Which sentence uses speech marks correctly?', correct: '"Come here," said Mum.', options: ['"Come here," said Mum.','"Come here" said Mum.','Come here, "said Mum".','"Come here, said Mum."'] },
+  { q: 'Which shows the dog belonging to the girl?', correct: 'the girl\'s dog', options: ['the girls dog','the girl\'s dog','the girls\' dog','the girl dog\'s'] },
+  { q: 'Which sentence is punctuated correctly?', correct: 'Where are you going?', options: ['Where are you going.','where are you going?','Where are you going?','Where are you going!?'] },
+  { q: 'Which word is the contraction of "do not"?', correct: 'don\'t', options: ['dont','do\'nt','don\'t','don\'ts'] },
+  { q: 'Which shows the toys belonging to several boys?', correct: 'the boys\' toys', options: ['the boys toys','the boy\'s toys','the boys\' toys','the boys\'s toys'] }
+];
+
+// Build exactly 4 unique options: the answer plus the best available distractors,
+// padded if any candidate collided with the answer or with each other.
+function buildOptions(correct, candidates, pad) {
+  const out = [String(correct)];
+  const push = v => {
+    if (out.length >= 4) return;
+    const s = String(v);
+    if (s !== '' && !out.includes(s)) out.push(s);
+  };
+  candidates.forEach(push);
+  for (let g = 1; out.length < 4 && g < 60; g++) push(pad(g));
+  return shuffle(out);
+}
+
+function generateYear3MathsQuestion() {
+  const type = rand(0, 5);
+
+  if (type === 0) {
+    // 3-digit addition or subtraction
+    if (rand(0, 1) === 0) {
+      const a = rand(120, 480), b = rand(110, 390);
+      const correct = a + b;
+      return { subject: 'maths', level: 'y3', question: `What is ${a} + ${b}?`, correct: String(correct),
+        options: shuffle([correct, correct + 10, correct - 10, correct + 100].map(String)), typed: false };
+    }
+    const a = rand(300, 900), b = rand(110, 280);
+    const correct = a - b;
+    return { subject: 'maths', level: 'y3', question: `What is ${a} − ${b}?`, correct: String(correct),
+      options: shuffle([correct, correct + 10, correct - 10, correct + 100].map(String)), typed: false };
+  }
+  if (type === 1) {
+    // 3, 4 and 8 times tables
+    const table = [3, 4, 8][rand(0, 2)];
+    const n = rand(2, 12);
+    const correct = table * n;
+    return { subject: 'maths', level: 'y3', question: `What is ${table} × ${n}?`, correct: String(correct),
+      options: shuffle([correct, correct + table, correct - table, correct + 2 * table].map(String)), typed: false };
+  }
+  if (type === 2) {
+    // Division facts
+    const divisor = [3, 4, 8][rand(0, 2)];
+    const answer = rand(2, 12);
+    const dividend = divisor * answer;
+    return { subject: 'maths', level: 'y3', question: `What is ${dividend} ÷ ${divisor}?`, correct: String(answer),
+      options: buildOptions(answer, [answer + 1, answer - 1, answer + 2], g => answer + 2 + g), typed: false };
+  }
+  if (type === 3) {
+    // Unit fraction of an amount
+    const denom = [2, 3, 4, 5][rand(0, 3)];
+    const answer = rand(2, 10);
+    const total = denom * answer;
+    const names = { 2: 'a half', 3: 'a third', 4: 'a quarter', 5: 'a fifth' };
+    return { subject: 'maths', level: 'y3', question: `What is ${names[denom]} of ${total}?`, correct: String(answer),
+      options: buildOptions(answer, [answer + 1, answer - 1, total - answer, answer + 2].filter(v => v > 0), g => answer + 2 + g), typed: false };
+  }
+  if (type === 4) {
+    // Place value
+    const digits = [rand(1, 9), rand(0, 9), rand(0, 9)];
+    const num = digits[0] * 100 + digits[1] * 10 + digits[2];
+    const pos = rand(0, 2);
+    const values = [digits[0] * 100, digits[1] * 10, digits[2]];
+    const names = ['hundreds', 'tens', 'ones'];
+    const correct = values[pos];
+    // Classic confusions: the bare digit, and the same digit in the wrong column
+    const candidates = [digits[pos], digits[pos] * 10, digits[pos] * 100,
+                        values[(pos + 1) % 3], values[(pos + 2) % 3]];
+    return { subject: 'maths', level: 'y3', question: `In the number ${num}, what is the value of the ${names[pos]} digit?`,
+      correct: String(correct), options: buildOptions(correct, candidates, g => correct + g * 10), typed: false };
+  }
+  // Money and change
+  const paid = [100, 200, 500][rand(0, 2)];
+  const cost = rand(15, paid - 10);
+  const change = paid - cost;
+  const fmt = p => p >= 100 ? `£${(p / 100).toFixed(2)}` : `${p}p`;
+  return { subject: 'maths', level: 'y3', question: `You pay ${fmt(paid)} for something costing ${fmt(cost)}.\nHow much change do you get?`,
+    correct: fmt(change), options: buildOptions(fmt(change), [change + 10, change - 10, change + 5].filter(v => v > 0).map(fmt), g => fmt(change + 10 + g * 5)), typed: false };
+}
+
+function generateYear3EnglishQuestion() {
+  const type = rand(0, 3);
+
+  if (type === 0) {
+    // Spelling — hear the word, choose the correct spelling
+    const item = YEAR3_SPELLINGS[rand(0, YEAR3_SPELLINGS.length - 1)];
+    return { subject: 'english', level: 'y3', question: 'Which is the correct spelling of the word you hear?',
+      correct: item.word, options: shuffle([item.word, ...item.wrong]), typed: false, speakWord: item.word };
+  }
+  if (type === 1) {
+    const item = HOMOPHONES[rand(0, HOMOPHONES.length - 1)];
+    return { subject: 'english', level: 'y3', question: item.q, correct: item.correct, options: shuffle(item.options), typed: false };
+  }
+  if (type === 2) {
+    const item = PREFIX_SUFFIX[rand(0, PREFIX_SUFFIX.length - 1)];
+    return { subject: 'english', level: 'y3', question: item.q, correct: item.correct, options: shuffle(item.options), typed: false };
+  }
+  const pool = rand(0, 1) === 0 ? WORD_CLASS : PUNCTUATION_Y3;
+  const item = pool[rand(0, pool.length - 1)];
+  return { subject: 'english', level: 'y3', question: item.q, correct: item.correct, options: shuffle(item.options), typed: false };
+}
 
 function generateMathsQuestion() {
   const type = rand(0, 5);
@@ -1078,8 +1299,12 @@ function generateBarneySession() {
     questions.push(genFn());
   }
 
-  for (let i = 0; i < 5; i++) addUnique(generateMathsQuestion);
-  for (let i = 0; i < 5; i++) addUnique(generateEnglishQuestion);
+  // Mix in Year 3 stretch questions. Raise stretchRatio in CHILDREN as he improves.
+  const perSubject = CHILDREN.barney.sessionSize / 2;
+  const stretch = Math.round(perSubject * CHILDREN.barney.stretchRatio);
+
+  for (let i = 0; i < perSubject; i++) addUnique(i < stretch ? generateYear3MathsQuestion : generateMathsQuestion);
+  for (let i = 0; i < perSubject; i++) addUnique(i < stretch ? generateYear3EnglishQuestion : generateEnglishQuestion);
   return shuffle(questions);
 }
 
@@ -1350,6 +1575,7 @@ function resetQuizScreen() {
   document.getElementById('quiz-question').textContent = 'Get ready…';
   document.getElementById('subject-tag').textContent = '';
   document.getElementById('subject-tag').className = 'quiz-subject-tag';
+  document.getElementById('stretch-tag').style.display = 'none';
   document.getElementById('answers-grid').innerHTML = '';
   document.getElementById('feedback-msg').textContent = '';
   document.getElementById('feedback-msg').className = 'feedback-msg';
@@ -1370,6 +1596,7 @@ function renderQuestion() {
   const tag = document.getElementById('subject-tag');
   tag.textContent = q.subject === 'maths' ? '📐 Maths' : '📖 English';
   tag.className = 'quiz-subject-tag ' + (q.subject === 'maths' ? 'tag-maths' : 'tag-english');
+  document.getElementById('stretch-tag').style.display = q.level === 'y3' ? 'inline-block' : 'none';
 
   // Question text (handle newlines)
   const qEl = document.getElementById('quiz-question');
@@ -1489,7 +1716,7 @@ function handleAnswer(correct, chosen, q, x, y) {
     dragon.className = 'quiz-dragon wrong';
 
     // Store wrong answer
-    s.wrongAnswers.unshift({ question: q.question, given: chosen, correct: q.correct, subject: q.subject });
+    s.wrongAnswers.unshift({ question: q.question, given: chosen, correct: q.correct, subject: q.subject, level: q.level || 'y2' });
     if (s.wrongAnswers.length > 20) s.wrongAnswers = s.wrongAnswers.slice(0, 20);
   }
 
@@ -1634,7 +1861,7 @@ function showParentDashboard() {
     const childName = getChild().name;
     wrongContent.innerHTML = s.wrongAnswers.slice(0, 10).map(w =>
       `<div class="wrong-item">
-        <strong>${w.subject === 'maths' ? '📐' : '📖'}</strong>
+        <strong>${w.subject === 'maths' ? '📐' : '📖'}</strong>${w.level === 'y3' ? ' <strong>💪</strong>' : ''}
         ${w.question.replace(/\n/g,' ')} —
         ${childName} said: <em>${w.given}</em>,
         correct: <strong>${w.correct}</strong>
