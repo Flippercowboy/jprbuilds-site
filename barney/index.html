@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learning Adventure</title>
+  <style>
+    :root {
+      --primary: #7C3AED;
+      --primary-light: #A78BFA;
+      --secondary: #F59E0B;
+      --success: #10B981;
+      --danger: #EF4444;
+      --bg: #1E1B4B;
+      --card: #2D2A6E;
+      --card2: #3730A3;
+      --text: #F5F3FF;
+      --text-muted: #C4B5FD;
+      --radius: 20px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; min-height: 100vh; padding: 20px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* ── HEADER BAR ── */
+    #header {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(30,27,75,0.95);
+      backdrop-filter: blur(8px);
+      padding: 10px 20px;
+      z-index: 100;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--primary);
+    }
+    #header.visible { display: flex; }
+    .header-stars { font-size: 1.4rem; font-weight: 700; color: var(--secondary); }
+    .header-streak { font-size: 1rem; color: var(--text-muted); }
+    .header-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-light); }
+
+    /* ── PICKER ── */
+    #screen-picker {
+      background: radial-gradient(ellipse at 50% 0%, #4C1D95 0%, #1E1B4B 70%);
+      gap: 24px;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+    .picker-title {
+      font-size: 2.4rem; font-weight: 900; text-align: center;
+      background: linear-gradient(135deg, #F59E0B, #EC4899);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .picker-cards {
+      display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+    }
+    .picker-card {
+      flex: 1; min-width: 140px; max-width: 200px;
+      background: var(--card); border-radius: var(--radius);
+      padding: 32px 20px; text-align: center;
+      border: 3px solid transparent; cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: var(--shadow);
+    }
+    .picker-card:hover {
+      border-color: var(--primary-light);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(124,58,237,0.4);
+    }
+    .picker-card-emoji { font-size: 80px; line-height: 1; animation: float 3s ease-in-out infinite; }
+    .picker-card-name  { font-size: 1.6rem; font-weight: 900; margin-top: 12px; }
+    .picker-card-sub   { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-block; padding: 16px 40px; border-radius: 50px; font-size: 1.3rem;
+      font-weight: 800; border: none; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, #7C3AED, #EC4899); color: white;
+      box-shadow: 0 6px 24px rgba(124,58,237,0.5); }
+    .btn-primary:hover { box-shadow: 0 8px 32px rgba(124,58,237,0.7); }
+    .btn-secondary { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(167,139,250,0.15);
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* ── HOME ── */
+    #screen-home { gap: 20px; padding-top: 80px; }
+    .home-greeting { font-size: 1.8rem; font-weight: 900; text-align: center;
+      background: linear-gradient(135deg, #F59E0B, #EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .dragon-home { font-size: 80px; text-align: center; animation: float 3s ease-in-out infinite; }
+    .dragon-speech {
+      background: var(--card2); border-radius: 16px; padding: 14px 20px;
+      font-size: 1.1rem; color: var(--text); text-align: center; position: relative;
+      margin-bottom: 8px;
+    }
+    .dragon-speech::after {
+      content: '▲'; position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+      color: var(--card2); font-size: 1.2rem;
+    }
+
+    /* sessions */
+    .sessions-wrap { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 600px; }
+    .session-card {
+      flex: 1; min-width: 140px; background: var(--card); border-radius: var(--radius);
+      padding: 20px 16px; text-align: center; border: 2px solid transparent;
+      cursor: pointer; transition: border-color 0.2s, transform 0.1s;
+    }
+    .session-card:hover { border-color: var(--primary-light); transform: translateY(-3px); }
+    .session-card.done { opacity: 0.5; pointer-events: none; }
+    .session-card.done::after { content: '✅ Done'; display: block; font-size: 0.85rem; margin-top: 6px; }
+    .session-card .session-icon { font-size: 2.4rem; }
+    .session-card .session-label { font-weight: 700; font-size: 1rem; margin-top: 8px; }
+    .session-card .session-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* streak calendar */
+    .streak-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .streak-day {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--card2);
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+      font-weight: 700; color: var(--text-muted); flex-direction: column;
+    }
+    .streak-day.filled { background: linear-gradient(135deg, #F59E0B, #EF4444); color: white; }
+    .streak-day .day-label { font-size: 0.6rem; opacity: 0.8; }
+
+    /* trophy shelf */
+    .badge-shelf { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .badge { font-size: 2rem; filter: grayscale(1) opacity(0.3); transition: filter 0.3s; }
+    .badge.earned { filter: none; animation: pop 0.4s ease; }
+    @keyframes pop { 0%{transform:scale(0)} 60%{transform:scale(1.3)} 100%{transform:scale(1)} }
+
+    .section-title { font-size: 1rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+    /* ── QUIZ ── */
+    #screen-quiz { padding-top: 90px; gap: 20px; }
+    .quiz-progress-wrap { width: 100%; max-width: 600px; }
+    .progress-bar-bg { background: var(--card); border-radius: 50px; height: 12px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 50px;
+      background: linear-gradient(90deg, #7C3AED, #EC4899); transition: width 0.4s ease; }
+    .progress-label { font-size: 0.85rem; color: var(--text-muted); text-align: right; margin-top: 4px; }
+
+    .quiz-subject-tag {
+      display: inline-block; padding: 4px 16px; border-radius: 50px; font-size: 0.85rem;
+      font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .tag-maths { background: #1D4ED8; color: #BFDBFE; }
+    .tag-english { background: #065F46; color: #A7F3D0; }
+
+    .quiz-question { font-size: 1.6rem; font-weight: 800; text-align: center; line-height: 1.3; margin-bottom: 24px; }
+    .quiz-dragon { font-size: 60px; text-align: center; transition: transform 0.2s; }
+    .quiz-dragon.correct { animation: wiggle 0.5s; }
+    .quiz-dragon.wrong { animation: shake 0.4s; }
+    @keyframes wiggle { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-12deg)} 75%{transform:rotate(12deg)} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+    .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 600px; }
+    .answer-btn {
+      padding: 18px 12px; border-radius: 16px; font-size: 1.2rem; font-weight: 700;
+      border: 2px solid transparent; background: var(--card); color: var(--text);
+      cursor: pointer; transition: all 0.15s; text-align: center;
+    }
+    .answer-btn:hover:not(:disabled) { border-color: var(--primary-light); background: var(--card2); transform: translateY(-2px); }
+    .answer-btn.correct-ans { background: #065F46; border-color: #10B981; color: white; }
+    .answer-btn.wrong-ans { background: #7F1D1D; border-color: #EF4444; color: white; }
+    .answer-btn:disabled { cursor: default; }
+
+    .feedback-msg { font-size: 1.1rem; font-weight: 700; text-align: center; min-height: 28px; }
+    .feedback-msg.correct-text { color: var(--success); }
+    .feedback-msg.wrong-text { color: var(--danger); }
+
+    .streak-counter { text-align: center; font-size: 1rem; color: var(--secondary); font-weight: 700; min-height: 24px; }
+
+    /* ── SESSION COMPLETE ── */
+    #screen-session-complete { gap: 20px; text-align: center; }
+    .complete-dragon { font-size: 100px; animation: float 3s ease-in-out infinite; }
+    .complete-title { font-size: 2.4rem; font-weight: 900;
+      background: linear-gradient(135deg, #F59E0B, #EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .complete-stars { font-size: 2rem; color: var(--secondary); font-weight: 700; margin: 8px 0; }
+    .badge-earned-display { font-size: 80px; }
+    .badge-earned-label { font-size: 1rem; color: var(--text-muted); }
+
+    /* ── ALL DONE ── */
+    #screen-all-done { text-align: center; gap: 16px; }
+    .all-done-dragon { font-size: 100px; animation: float 3s ease-in-out infinite; }
+
+    /* ── PARENT DASHBOARD ── */
+    #screen-parent { padding-top: 20px; gap: 16px; }
+    .parent-title { font-size: 1.6rem; font-weight: 900; color: var(--secondary); }
+    .stat-row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 600px; }
+    .stat-card { flex: 1; min-width: 120px; background: var(--card); border-radius: 16px;
+      padding: 16px; text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 900; color: var(--primary-light); }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+    .wrong-list { width: 100%; max-width: 600px; }
+    .wrong-item { background: var(--card2); border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 8px; font-size: 0.9rem; border-left: 3px solid var(--danger); }
+    .passcode-wrap { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .passcode-btn { width: 60px; height: 60px; border-radius: 14px; font-size: 1.4rem;
+      font-weight: 700; background: var(--card); border: 2px solid var(--primary); color: var(--text); cursor: pointer; }
+    .passcode-display { font-size: 2rem; letter-spacing: 10px; text-align: center;
+      color: var(--primary-light); min-height: 40px; }
+
+    /* ── CONFETTI ── */
+    .confetti-piece {
+      position: fixed; width: 10px; height: 10px; border-radius: 3px;
+      pointer-events: none; z-index: 999;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ── STAR BURST ── */
+    .star-burst {
+      position: fixed; font-size: 2rem; z-index: 998; pointer-events: none;
+      animation: starFloat 1s ease-out forwards;
+    }
+    @keyframes starFloat {
+      0% { transform: scale(0) translateY(0); opacity: 1; }
+      100% { transform: scale(1.5) translateY(-80px); opacity: 0; }
+    }
+
+    /* ── INPUT ANSWER (for typing questions) ── */
+    .answer-input {
+      width: 100%; max-width: 300px; padding: 16px; font-size: 2rem; font-weight: 700;
+      text-align: center; border-radius: 16px; border: 3px solid var(--primary);
+      background: var(--card); color: var(--text); outline: none;
+    }
+    .answer-input:focus { border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(167,139,250,0.3); }
+    .submit-btn { margin-top: 12px; }
+
+    /* ── PASSCODE SCREEN ── */
+    #screen-passcode { gap: 20px; }
+    .passcode-title { font-size: 1.4rem; font-weight: 700; text-align: center; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 400px) {
+      .picker-title { font-size: 1.9rem; }
+      .picker-card-emoji { font-size: 60px; }
+      .quiz-question { font-size: 1.3rem; }
+      .answer-btn { font-size: 1rem; padding: 14px 8px; }
+    }
+
+    /* ── SCROLL ── */
+    #screen-home, #screen-parent { justify-content: flex-start; padding-top: 90px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="header-stars">⭐ <span id="header-stars">0</span></div>
+  <div class="header-title" id="header-title">Barney's Adventure</div>
+  <div class="header-streak">🔥 <span id="header-streak">0</span> day streak</div>
+</div>
+
+<!-- ═══════════════ PICKER ═══════════════ -->
+<div id="screen-picker" class="screen active">
+  <div class="picker-title">Who's learning today?</div>
+  <div class="picker-cards">
+    <div class="picker-card" onclick="selectChild('barney')">
+      <div class="picker-card-emoji">🐉</div>
+      <div class="picker-card-name">Barney</div>
+      <div class="picker-card-sub">Year 2</div>
+    </div>
+    <div class="picker-card" onclick="selectChild('florrie')">
+      <div class="picker-card-emoji">🧚‍♀️</div>
+      <div class="picker-card-name">Florrie</div>
+      <div class="picker-card-sub">Starting Reception</div>
+    </div>
+  </div>
+  <div style="margin-top:16px">
+    <button class="btn btn-secondary" style="font-size:0.9rem;padding:10px 24px" onclick="showPasscodeScreen('parent')">👨‍👩‍👧 Parent Area</button>
+  </div>
+</div>
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div id="screen-home" class="screen">
+  <div class="dragon-home" id="home-companion">🐉</div>
+  <div class="dragon-speech" id="home-speech">Ready for today's adventure, Barney?</div>
+  <div style="height:32px"></div>
+  <div class="home-greeting" id="home-greeting">Good morning, Barney! 👋</div>
+
+  <div class="sessions-wrap" id="sessions-wrap">
+    <div class="session-card" id="session-card-0" onclick="startSession(0)">
+      <div class="session-icon">☀️</div>
+      <div class="session-label">Morning Session</div>
+      <div class="session-sub" id="session-sub-0">5 Maths + 5 English</div>
+    </div>
+    <div class="session-card" id="session-card-1" onclick="startSession(1)">
+      <div class="session-icon">🌙</div>
+      <div class="session-label">Afternoon Session</div>
+      <div class="session-sub" id="session-sub-1">5 Maths + 5 English</div>
+    </div>
+  </div>
+
+  <div style="height:20px"></div>
+
+  <!-- Stars total -->
+  <div class="card" style="text-align:center;max-width:600px;width:100%">
+    <div class="section-title">Your Stars</div>
+    <div style="font-size:2.5rem;font-weight:900;color:var(--secondary)">⭐ <span id="total-stars-display">0</span></div>
+  </div>
+
+  <!-- 7-day streak -->
+  <div class="card" style="max-width:600px;width:100%">
+    <div class="section-title">🔥 Your Streak</div>
+    <div class="streak-row" id="streak-row"></div>
+  </div>
+
+  <!-- Trophy shelf -->
+  <div class="card" style="max-width:600px;width:100%">
+    <div class="section-title">🏆 Trophy Shelf</div>
+    <div class="badge-shelf" id="badge-shelf"></div>
+  </div>
+
+  <div style="height:20px"></div>
+  <button class="btn btn-secondary" style="font-size:0.85rem;padding:10px 24px" onclick="showPasscodeScreen('parent')">👨‍👩‍👧 Parent Area</button>
+  <button class="btn btn-secondary" style="font-size:0.85rem;padding:8px 20px;margin-top:8px" onclick="showPicker()">🔄 Switch player</button>
+  <div style="height:40px"></div>
+</div>
+
+<!-- ═══════════════ QUIZ ═══════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-progress-wrap">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-label" id="progress-label">Question 1 of 10</div>
+  </div>
+
+  <div class="quiz-dragon" id="quiz-dragon">🐉</div>
+  <div class="streak-counter" id="streak-counter"></div>
+
+  <div class="card" style="text-align:center">
+    <div><span class="quiz-subject-tag" id="subject-tag">Maths</span></div>
+    <div class="quiz-question" id="quiz-question">Loading...</div>
+
+    <!-- Hear word button (spelling/phonics only) -->
+    <div id="hear-word-wrap" style="display:none; margin-bottom:12px">
+      <button class="btn btn-secondary" style="font-size:1rem;padding:10px 28px" onclick="replayWord()">🔊 Hear the word again</button>
+    </div>
+
+    <!-- Multiple choice -->
+    <div class="answers-grid" id="answers-grid"></div>
+
+    <!-- Type answer -->
+    <div id="type-answer-wrap" style="display:none; flex-direction:column; align-items:center; gap:8px">
+      <input type="number" class="answer-input" id="type-input" placeholder="?" autocomplete="off" />
+      <button class="btn btn-primary submit-btn" onclick="submitTyped()">Check ✅</button>
+    </div>
+
+    <div class="feedback-msg" id="feedback-msg" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SESSION COMPLETE ═══════════════ -->
+<div id="screen-session-complete" class="screen">
+  <div class="complete-dragon" id="complete-companion">🐉</div>
+  <div class="complete-title" id="complete-title">Amazing Work!</div>
+  <div class="complete-stars" id="complete-stars">You earned ⭐ 8 stars!</div>
+  <div class="badge-earned-display" id="badge-earned-display"></div>
+  <div class="badge-earned-label" id="badge-earned-label"></div>
+  <div class="card" style="text-align:center">
+    <div id="complete-message">Blaze is so proud of you!</div>
+    <div style="margin-top:20px">
+      <div id="session-score-wrap" style="font-size:1rem;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="showPicker()" style="margin-top:8px">Back to Players 🏠</button>
+</div>
+
+<!-- ═══════════════ ALL DONE ═══════════════ -->
+<div id="screen-all-done" class="screen">
+  <div class="all-done-dragon" id="all-done-companion">🐉</div>
+  <div class="complete-title">All Done Today!</div>
+  <div class="card" style="text-align:center;max-width:500px">
+    <div style="font-size:1.2rem">You've finished both sessions for today, <span id="all-done-name">Barney</span>! 🎉</div>
+    <div style="margin-top:12px;color:var(--text-muted)"><span id="all-done-companion-name">Blaze</span> says: come back tomorrow for more adventures!</div>
+    <div style="margin-top:16px;font-size:2rem;color:var(--secondary)">⭐ <span id="all-done-stars">0</span> total stars</div>
+  </div>
+  <button class="btn btn-primary" onclick="showPicker()" style="margin-top:8px">Back to Players 🏠</button>
+</div>
+
+<!-- ═══════════════ PASSCODE ═══════════════ -->
+<div id="screen-passcode" class="screen">
+  <div style="font-size:60px">🔒</div>
+  <div class="passcode-title">Parent Area — Enter Passcode</div>
+  <div class="passcode-display" id="passcode-display">_ _ _ _</div>
+  <div class="passcode-wrap">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:220px">
+      <button class="passcode-btn" onclick="passcodePress('1')">1</button>
+      <button class="passcode-btn" onclick="passcodePress('2')">2</button>
+      <button class="passcode-btn" onclick="passcodePress('3')">3</button>
+      <button class="passcode-btn" onclick="passcodePress('4')">4</button>
+      <button class="passcode-btn" onclick="passcodePress('5')">5</button>
+      <button class="passcode-btn" onclick="passcodePress('6')">6</button>
+      <button class="passcode-btn" onclick="passcodePress('7')">7</button>
+      <button class="passcode-btn" onclick="passcodePress('8')">8</button>
+      <button class="passcode-btn" onclick="passcodePress('9')">9</button>
+      <button class="passcode-btn" onclick="passcodePress('clear')" style="font-size:1rem">CLR</button>
+      <button class="passcode-btn" onclick="passcodePress('0')">0</button>
+      <button class="passcode-btn" onclick="passcodePress('back')">⌫</button>
+    </div>
+  </div>
+  <button class="btn btn-secondary" onclick="passcodeCancel()" style="margin-top:16px">Cancel</button>
+</div>
+
+<!-- ═══════════════ PARENT DASHBOARD ═══════════════ -->
+<div id="screen-parent" class="screen">
+  <div class="parent-title" id="parent-title">📊 Parent Dashboard</div>
+
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-num" id="p-total-stars">0</div><div class="stat-label">Total Stars</div></div>
+    <div class="stat-card"><div class="stat-num" id="p-today-sessions">0/2</div><div class="stat-label">Today's Sessions</div></div>
+    <div class="stat-card"><div class="stat-num" id="p-streak">0</div><div class="stat-label">Day Streak</div></div>
+    <div class="stat-card"><div class="stat-num" id="p-total-q">0</div><div class="stat-label">Questions Answered</div></div>
+  </div>
+
+  <div class="card wrong-list" id="wrong-list-wrap">
+    <div class="section-title">Recent Incorrect Answers</div>
+    <div id="wrong-list-content"></div>
+  </div>
+
+  <div class="card" style="max-width:600px;width:100%;text-align:center">
+    <div class="section-title">Settings</div>
+    <button class="btn btn-secondary" style="font-size:0.9rem;margin:8px" onclick="resetAll()">🗑️ Reset All Progress</button>
+    <button class="btn btn-secondary" style="font-size:0.9rem;margin:8px" onclick="resetPasscode()">🔑 Change Passcode</button>
+  </div>
+
+  <button class="btn btn-primary" onclick="showHome()" style="margin-top:8px">Back to Home 🏠</button>
+  <div style="height:40px"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ═══════════════════════════════════════════════════
+//  SPEECH — pre-generated static audio
+// ═══════════════════════════════════════════════════
+// Every line and word is generated ahead of time into audio/<child>/<slug>.mp3
+// by tools/generate-audio.mjs. No API key ships with this app and nothing is
+// called at runtime, so playback is instant and works offline.
+// After changing any phrase or word list below, re-run the generator.
+let currentWordAudio = null;
+let currentPlayingAudio = null;
+let blazeGeneration = 0;
+let blazeAudioQueue = Promise.resolve();
+
+// Which child is playing — set by the picker screen
+let activeChild = 'barney'; // 'barney' | 'florrie'
+
+// Voice line banks
+const BARNEY_VOICE = {
+  sessionStart: [
+    "Get ready to be challenged, Barney!",
+    "Time to show what you know, Barney — let's go!",
+    "Blaze believes in you! Let's do this!",
+    "Adventure time, Barney! Are you ready?",
+    "Get your thinking cap on — here we go!"
+  ],
+  welcome: [
+    "Hey Barney, great to see you! Let's learn something amazing.",
+    "Barney's back! Blaze is so excited to see you!",
+    "Welcome back, Barney! Ready for an adventure?",
+    "Hello Barney! Blaze has been waiting for you!"
+  ],
+  correct: [
+    "Brilliant!",
+    "Yes! Spot on!",
+    "Nailed it!",
+    "Fantastic work!",
+    "You're so clever, Barney!",
+    "That's exactly right!",
+    "Superstar!"
+  ],
+  streak: [
+    "Three in a row — you are on fire!",
+    "Incredible! You just can't stop getting them right!",
+    "Blaze is doing a happy dance — you're amazing!"
+  ],
+  wrong: [
+    "Oops, nearly there! Keep going!",
+    "Don't worry, Barney — you'll get the next one!",
+    "Good try! Blaze still believes in you!",
+    "Not quite — but you're doing brilliantly overall!",
+    "Everyone gets one wrong sometimes — keep going!"
+  ],
+  sessionComplete: [
+    "Incredible work, Barney — Blaze is so proud of you!",
+    "You smashed it! What a brilliant learner you are!",
+    "Blaze is doing somersaults — that was amazing!",
+    "Outstanding, Barney! You should be really proud!"
+  ],
+  weekStreak: [
+    "A whole week of learning — that is absolutely legendary, Barney!",
+    "Seven days in a row! Blaze has never been so proud!"
+  ]
+};
+
+const FLORRIE_VOICE = {
+  sessionStart: [
+    "Let's go, Florrie — Sparkle is ready!",
+    "Time to shine, Florrie! Let's do this!",
+    "Sparkle believes in you! Here we go!",
+    "Adventure time, Florrie — are you ready?"
+  ],
+  welcome: [
+    "Hi Florrie! Sparkle is so happy to see you!",
+    "Welcome back, Florrie! Ready for some magic?",
+    "Florrie's here! Let's learn something wonderful!",
+    "Sparkle has been waiting for you, Florrie!"
+  ],
+  correct: [
+    "Brilliant!",
+    "Amazing, Florrie!",
+    "You're so clever!",
+    "Sparkle loves that answer!",
+    "Wonderful!",
+    "That's exactly right!",
+    "You're a star, Florrie!"
+  ],
+  streak: [
+    "Three in a row — Sparkle is dancing!",
+    "You just can't stop getting them right!",
+    "Sparkle is doing flips — you're amazing, Florrie!"
+  ],
+  wrong: [
+    "Nearly there — keep going, Florrie!",
+    "Don't worry — you'll get the next one!",
+    "Good try! Sparkle still believes in you!",
+    "Not quite — but you're doing brilliantly!",
+    "Everyone gets one wrong — keep going!"
+  ],
+  sessionComplete: [
+    "Incredible work, Florrie — Sparkle is so proud!",
+    "You smashed it! What a brilliant learner!",
+    "Sparkle is doing somersaults — that was amazing!",
+    "Outstanding, Florrie! You should be really proud!"
+  ],
+  weekStreak: [
+    "A whole week of learning — that is absolutely magical, Florrie!",
+    "Seven days in a row! Sparkle has never been so proud!"
+  ]
+};
+
+// ═══════════════════════════════════════════════════
+//  CHILDREN CONFIG
+// ═══════════════════════════════════════════════════
+// Declared after the voice banks so the const references resolve.
+// The generate* functions are hoisted declarations, so those are fine.
+const CHILDREN = {
+  barney: {
+    name: 'Barney',
+    emoji: '🐉',
+    companionName: 'Blaze',
+    companionEmoji: '🐉',
+    storageKey: 'barney_state',
+    firebasePath: 'barney',
+    sessionSize: 10,        // 5 maths + 5 english
+    generateSession: generateBarneySession,
+    voice: BARNEY_VOICE,
+    voiceId: 'xsiB5fGhEtknnqzudCO6'
+  },
+  florrie: {
+    name: 'Florrie',
+    emoji: '🧚‍♀️',
+    companionName: 'Sparkle',
+    companionEmoji: '🧚‍♀️',
+    storageKey: 'florrie_state',
+    firebasePath: 'florrie',
+    sessionSize: 8,         // 4 maths + 4 english
+    generateSession: generateFlorrieSession,
+    voice: FLORRIE_VOICE,
+    voiceId: 'piI8Kku0DcvcL6TTSeQt'
+  }
+};
+
+function getChild() { return CHILDREN[activeChild]; }
+function getVoice() { return getChild().voice; }
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function cancelSpeech() {
+  blazeGeneration++;
+  if (currentPlayingAudio) {
+    currentPlayingAudio.pause();
+    currentPlayingAudio = null;
+  }
+  blazeAudioQueue = Promise.resolve();
+}
+
+// Must stay identical to audioSlug() in tools/generate-audio.mjs
+function audioSlug(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+}
+
+function audioUrl(text) {
+  return `audio/${activeChild}/${audioSlug(text)}.mp3`;
+}
+
+async function _playQueued(text, gen, trackAsWord) {
+  if (gen !== blazeGeneration) return;
+  try {
+    return new Promise(resolve => {
+      const audio = new Audio(audioUrl(text));
+      if (trackAsWord) currentWordAudio = audio;
+      currentPlayingAudio = audio;
+      audio.onended = () => { currentPlayingAudio = null; resolve(); };
+      // A missing clip must never stall the quiz — resolve and carry on silently
+      audio.onerror = () => { currentPlayingAudio = null; resolve(); };
+      audio.play().catch(resolve);
+    });
+  } catch(e) { console.warn('Audio playback failed:', e); }
+}
+
+function blazeSpeak(text) {
+  const gen = blazeGeneration;
+  blazeAudioQueue = blazeAudioQueue.then(() => _playQueued(text, gen, false));
+  return blazeAudioQueue;
+}
+
+function speakWord(word) {
+  currentWordAudio = null;
+  document.getElementById('hear-word-wrap').style.display = 'block';
+  const gen = blazeGeneration;
+  blazeAudioQueue = blazeAudioQueue.then(() => _playQueued(word + '.', gen, true));
+}
+
+function replayWord() {
+  if (currentWordAudio) {
+    currentWordAudio.currentTime = 0;
+    currentWordAudio.play();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  FIREBASE
+// ═══════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: "AIzaSyAcVcYE8KzUjPVYxURdzXTOO_zSw1z4Ha4",
+  authDomain: "learning-app-847fe.firebaseapp.com",
+  databaseURL: "https://learning-app-847fe-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "learning-app-847fe",
+  storageBucket: "learning-app-847fe.firebasestorage.app",
+  messagingSenderId: "952884860911",
+  appId: "1:952884860911:web:863ac5c7ed1e064cf5c81a"
+});
+function getDataRef() {
+  return firebase.database().ref(getChild().firebasePath);
+}
+
+// ═══════════════════════════════════════════════════
+//  STATE & STORAGE
+// ═══════════════════════════════════════════════════
+const PASSCODE_DEFAULT = '1234';
+// Cache is keyed by child so switching player never serves the other child's state
+let cachedStates = {};
+
+function getStorageKey() { return getChild().storageKey; }
+
+function defaultState() {
+  return {
+    totalStars: 0,
+    currentStreak: 0,
+    lastPlayDate: '',
+    sessionsDoneToday: [],
+    todayDate: '',
+    badges: {},
+    totalQuestions: 0,
+    wrongAnswers: [],
+    passcode: PASSCODE_DEFAULT,
+    streakHistory: [],
+    sessionCount: 0
+  };
+}
+
+function getState() {
+  if (cachedStates[activeChild]) return cachedStates[activeChild];
+  let s;
+  try {
+    const saved = localStorage.getItem(getStorageKey());
+    s = saved ? Object.assign(defaultState(), JSON.parse(saved)) : defaultState();
+  } catch(e) { s = defaultState(); }
+  cachedStates[activeChild] = s;
+  return s;
+}
+
+function saveState(s) {
+  cachedStates[activeChild] = s;
+  localStorage.setItem(getStorageKey(), JSON.stringify(s));
+  getDataRef().set(s).catch(e => console.warn('Firebase sync failed:', e));
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+
+// Ensure today tracking is correct
+function checkNewDay(s) {
+  const today = todayStr();
+  if (s.todayDate !== today) {
+    // New day — update streak
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yd = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+    if (s.lastPlayDate === yd) {
+      // played yesterday — streak continues
+    } else if (s.lastPlayDate === today) {
+      // same day, no change
+    } else {
+      s.currentStreak = 0;
+    }
+    s.sessionsDoneToday = [];
+    s.todayDate = today;
+    saveState(s);
+  }
+  return s;
+}
+
+// ═══════════════════════════════════════════════════
+//  QUESTION BANKS
+// ═══════════════════════════════════════════════════
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+function pickWrong(correct, min, max, count) {
+  const wrongs = new Set();
+  while (wrongs.size < count) {
+    const w = rand(min, max);
+    if (w !== correct) wrongs.add(w);
+  }
+  return [...wrongs];
+}
+
+const SHAPES = [
+  { name: 'Circle', emoji: '⭕', sides: 0 },
+  { name: 'Triangle', emoji: '🔺', sides: 3 },
+  { name: 'Square', emoji: '🟥', sides: 4 },
+  { name: 'Rectangle', emoji: '▬', sides: 4 },
+  { name: 'Pentagon', emoji: '⬠', sides: 5 },
+  { name: 'Hexagon', emoji: '⬡', sides: 6 },
+  { name: 'Star', emoji: '⭐', sides: 5 }
+];
+
+const YEAR2_WORDS = [
+  'because','different','people','school','water',
+  'friend','again','any','every','great',
+  'house','know','many','more','most',
+  'mother','move','name','new','night',
+  'often','once','our','only','other',
+  'place','please','put','right','said',
+  'should','small','some','still','their',
+  'these','thing','think','those','through',
+  'walk','want','were','where','what',
+  'when','which','whole','who','your'
+];
+
+const SENTENCES_MCQ = [
+  { q: 'Choose the correct spelling to complete: "I want to go ___ the park."', correct: 'to', options: ['two','too','to','tow'] },
+  { q: 'Which word means the opposite of "big"?', correct: 'small', options: ['tall','small','hard','fast'] },
+  { q: 'Choose the correct word: "The dog ___ in the garden."', correct: 'played', options: ['play','plays','playing','played'] },
+  { q: 'Which sentence uses a capital letter correctly?', correct: 'My name is Barney.', options: ['my name is barney.','My Name Is Barney.','my Name is barney.','My name is Barney.'] },
+  { q: 'Which word rhymes with "cat"?', correct: 'hat', options: ['cup','hot','hat','bit'] },
+  { q: 'Choose the correct word: "There are ___ apples."', correct: 'three', options: ['tree','free','three','threw'] },
+  { q: 'Which word has the "oo" sound?', correct: 'moon', options: ['man','moon','hen','but'] },
+  { q: 'What is the plural of "box"?', correct: 'boxes', options: ['boxs','boxies','boxes','boxen'] },
+  { q: 'Which word means a place where you learn?', correct: 'school', options: ['shore','school','stool','scroll'] },
+  { q: 'Pick the word with a silent letter:', correct: 'know', options: ['cat','dog','know','run'] },
+  { q: 'Choose the correct word: "___ is your favourite colour?"', correct: 'What', options: ['Where','What','When','Which'] },
+  { q: 'Which sentence has the correct punctuation?', correct: 'I like cats.', options: ['I like cats','i like cats.','I like Cats.','I like cats.'] },
+  { q: 'What does "enormous" mean?', correct: 'very big', options: ['very fast','very big','very loud','very old'] },
+  { q: 'Which word rhymes with "night"?', correct: 'light', options: ['like','lick','light','long'] },
+  { q: 'Choose the missing word: "The bird ___ high in the sky."', correct: 'flew', options: ['fly','flews','flew','flied'] }
+];
+
+const TIMES = [
+  { display: '3 o\'clock', question: 'What time does this clock show? 🕒', answer: '3 o\'clock', options: ['3 o\'clock','4 o\'clock','half past 3','half past 2'] },
+  { display: 'half past 6', question: 'What time does this clock show? 🕕', answer: 'half past 6', options: ['half past 6','6 o\'clock','half past 7','half past 5'] },
+  { display: '9 o\'clock', question: 'What time does this clock show? 🕘', answer: '9 o\'clock', options: ['8 o\'clock','9 o\'clock','half past 9','10 o\'clock'] },
+  { display: 'half past 12', question: 'What time does this clock show? 🕧', answer: 'half past 12', options: ['12 o\'clock','half past 11','half past 12','half past 1'] },
+  { display: '5 o\'clock', question: 'What time does this clock show? 🕔', answer: '5 o\'clock', options: ['4 o\'clock','half past 5','5 o\'clock','6 o\'clock'] }
+];
+
+function generateMathsQuestion() {
+  const type = rand(0, 5);
+
+  if (type === 0) {
+    // Addition up to 20
+    const a = rand(1, 12), b = rand(1, 12 - Math.min(a, 8));
+    const correct = a + b;
+    const opts = shuffle([correct, ...pickWrong(correct, 0, 24, 3)]);
+    return { subject: 'maths', question: `What is ${a} + ${b}?`, correct: String(correct), options: opts.map(String), typed: false };
+  }
+  if (type === 1) {
+    // Subtraction
+    const b = rand(1, 10), a = rand(b, b + 10);
+    const correct = a - b;
+    const opts = shuffle([correct, ...pickWrong(correct, 0, 20, 3)]);
+    return { subject: 'maths', question: `What is ${a} − ${b}?`, correct: String(correct), options: opts.map(String), typed: false };
+  }
+  if (type === 2) {
+    // Counting in 2s, 5s, 10s
+    const step = [2, 5, 10][rand(0, 2)];
+    const start = rand(1, 5) * step;
+    const seq = [start, start + step, start + 2 * step, '?'];
+    const correct = start + 3 * step;
+    const opts = shuffle([correct, correct + step, correct - step, correct + 2].map(String));
+    return { subject: 'maths', question: `What comes next?\n${start}, ${start+step}, ${start+2*step}, …?`, correct: String(correct), options: opts, typed: false };
+  }
+  if (type === 3) {
+    // 2× or 5× tables
+    const table = [2, 5][rand(0, 1)];
+    const n = rand(1, 10);
+    const correct = table * n;
+    const opts = shuffle([correct, ...pickWrong(correct, 0, 60, 3)]);
+    return { subject: 'maths', question: `What is ${table} × ${n}?`, correct: String(correct), options: opts.map(String), typed: false };
+  }
+  if (type === 4) {
+    // Shapes
+    const shape = SHAPES[rand(0, SHAPES.length - 1)];
+    const others = shuffle(SHAPES.filter(s => s.name !== shape.name)).slice(0, 3);
+    const opts = shuffle([shape, ...others]);
+    return { subject: 'maths', question: `What shape is this?\n${shape.emoji}`, correct: shape.name, options: opts.map(s => s.name), typed: false };
+  }
+  // Telling time
+  const t = TIMES[rand(0, TIMES.length - 1)];
+  return { subject: 'maths', question: t.question, correct: t.answer, options: t.options, typed: false };
+}
+
+function generateEnglishQuestion() {
+  const type = rand(0, 2);
+
+  if (type === 0) {
+    // Spelling — show definition/use, pick correct spelling
+    const word = YEAR2_WORDS[rand(0, YEAR2_WORDS.length - 1)];
+    // Generate plausible misspellings
+    const misspell1 = word.slice(0, -1) + (word.slice(-1) === 'e' ? 'ie' : 'e');
+    const misspell2 = word[0] + word.slice(1).split('').reverse().join('').slice(0, -1) + word.slice(-1);
+    const misspell3 = word.replace(/([aeiou])/, (m) => m === 'a' ? 'e' : 'a');
+    const opts = shuffle([word, misspell1, misspell2, misspell3].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4));
+    const padded = opts.length < 4 ? [...opts, word + 's', word + 'ed'].slice(0, 4) : opts;
+    return { subject: 'english', question: `Which is the correct spelling of the word you hear?`, correct: word, options: shuffle(padded), typed: false, speakWord: word };
+  }
+  if (type === 1) {
+    // Sentence MCQ
+    const q = SENTENCES_MCQ[rand(0, SENTENCES_MCQ.length - 1)];
+    return { subject: 'english', question: q.q, correct: q.correct, options: shuffle(q.options), typed: false };
+  }
+  // Phonics / word families
+  const phonicsGroups = [
+    { sound: 'ai', words: ['rain','tail','sail','wait'], decoys: ['ran','tall','sell','wit'] },
+    { sound: 'ee', words: ['feet','seed','tree','see'], decoys: ['fat','sad','try','so'] },
+    { sound: 'oa', words: ['road','coat','goat','boat'], decoys: ['rod','cat','got','but'] },
+    { sound: 'igh', words: ['light','night','right','sight'], decoys: ['lit','nit','rot','sit'] },
+    { sound: 'oo', words: ['moon','food','pool','root'], decoys: ['man','fad','pal','rot'] }
+  ];
+  const group = phonicsGroups[rand(0, phonicsGroups.length - 1)];
+  const correct = group.words[rand(0, group.words.length - 1)];
+  const decoys = shuffle(group.decoys).slice(0, 3);
+  return {
+    subject: 'english',
+    question: `Which word has the "${group.sound}" sound?`,
+    correct,
+    options: shuffle([correct, ...decoys]),
+    typed: false,
+    speakWord: correct
+  };
+}
+
+// ── FLORRIE — RECEPTION / EYFS ──
+
+const RECEPTION_SIGHT_WORDS = ['the','I','a','is','it','in','at','on','and','he','she','we','be','me','go'];
+
+const INITIAL_SOUNDS = [
+  { letter: 'S', correct: 'sun',  options: ['sun','bin','cat','dog'] },
+  { letter: 'C', correct: 'cat',  options: ['hat','cat','bat','mat'] },
+  { letter: 'D', correct: 'dog',  options: ['log','fog','dog','bog'] },
+  { letter: 'B', correct: 'ball', options: ['ball','tall','fall','wall'] },
+  { letter: 'M', correct: 'moon', options: ['moon','soon','boon','noon'] },
+  { letter: 'T', correct: 'top',  options: ['top','hop','pop','cop'] },
+  { letter: 'F', correct: 'fish', options: ['fish','dish','wish','swish'] },
+  { letter: 'H', correct: 'hat',  options: ['cat','rat','bat','hat'] },
+  { letter: 'P', correct: 'pig',  options: ['big','pig','dig','fig'] },
+  { letter: 'R', correct: 'red',  options: ['bed','led','red','fed'] }
+];
+
+const RHYME_PAIRS = [
+  { word: 'cat', correct: 'hat', options: ['hat','cup','dog','sun'] },
+  { word: 'big', correct: 'pig', options: ['pig','cat','log','hen'] },
+  { word: 'sun', correct: 'run', options: ['run','sit','top','mud'] },
+  { word: 'hop', correct: 'top', options: ['top','hat','big','red'] },
+  { word: 'red', correct: 'bed', options: ['bed','cup','log','pig'] },
+  { word: 'hen', correct: 'ten', options: ['ten','sat','mud','hop'] }
+];
+
+const COUNT_EMOJIS = ['🍎','🌟','🐶','🍪','🎈'];
+
+const FLORRIE_SHAPES = [
+  { name: 'Circle',   emoji: '⭕' },
+  { name: 'Triangle', emoji: '🔺' },
+  { name: 'Square',   emoji: '🟥' },
+  { name: 'Star',     emoji: '⭐' },
+  { name: 'Heart',    emoji: '🩷' }
+];
+
+// Build 4 numeric options around `correct`, never dropping below `floor`
+function numberOptions(correct, floor) {
+  const opts = new Set([correct]);
+  [correct + 1, correct - 1, correct + 2, correct + 3, correct - 2].forEach(n => {
+    if (opts.size < 4 && n >= floor && n !== correct) opts.add(n);
+  });
+  let extra = correct + 4;
+  while (opts.size < 4) { opts.add(extra); extra++; }
+  return shuffle([...opts].map(String));
+}
+
+function generateFlorrieEnglishQuestion() {
+  const type = rand(0, 2);
+
+  if (type === 0) {
+    // Initial sounds
+    const item = INITIAL_SOUNDS[rand(0, INITIAL_SOUNDS.length - 1)];
+    return {
+      subject: 'english',
+      question: `Which word starts with the letter ${item.letter}?`,
+      correct: item.correct,
+      options: shuffle(item.options),
+      typed: false
+    };
+  }
+  if (type === 1) {
+    // Rhyming
+    const item = RHYME_PAIRS[rand(0, RHYME_PAIRS.length - 1)];
+    return {
+      subject: 'english',
+      question: `Which word rhymes with "${item.word}"?`,
+      correct: item.correct,
+      options: shuffle(item.options),
+      typed: false
+    };
+  }
+  // Sight words — find the matching word among 3 distractors from the same list
+  const word = RECEPTION_SIGHT_WORDS[rand(0, RECEPTION_SIGHT_WORDS.length - 1)];
+  const distractors = shuffle(RECEPTION_SIGHT_WORDS.filter(w => w !== word)).slice(0, 3);
+  return {
+    subject: 'english',
+    question: `Can you find the word "${word}"?`,
+    correct: word,
+    options: shuffle([word, ...distractors]),
+    typed: false
+  };
+}
+
+function generateFlorriesMathsQuestion() {
+  const type = rand(0, 4);
+
+  if (type === 0) {
+    // Count objects
+    const emoji = COUNT_EMOJIS[rand(0, COUNT_EMOJIS.length - 1)];
+    const count = rand(1, 5);
+    return {
+      subject: 'maths',
+      question: `How many ${emoji} can you count?\n${emoji.repeat(count)}`,
+      correct: String(count),
+      options: numberOptions(count, 1),
+      typed: false
+    };
+  }
+  if (type === 1) {
+    // Add within 5
+    const a = rand(1, 4);
+    const b = rand(1, 5 - a);
+    const correct = a + b;
+    return {
+      subject: 'maths',
+      question: `What is ${a} + ${b}?`,
+      correct: String(correct),
+      options: numberOptions(correct, 0),
+      typed: false
+    };
+  }
+  if (type === 2) {
+    // Subtract within 5
+    const a = rand(2, 5);
+    const b = rand(1, a);
+    const correct = a - b;
+    return {
+      subject: 'maths',
+      question: `You have ${a} 🍪 and eat ${b} — how many are left?`,
+      correct: String(correct),
+      options: numberOptions(correct, 0),
+      typed: false
+    };
+  }
+  if (type === 3) {
+    // Missing number
+    const n = rand(2, 8);
+    const correct = n + 1;
+    return {
+      subject: 'maths',
+      question: `What number is missing?\n${n - 1}, ${n}, ?, ${n + 2}`,
+      correct: String(correct),
+      options: numberOptions(correct, 1),
+      typed: false
+    };
+  }
+  // Shape recognition
+  const shape = FLORRIE_SHAPES[rand(0, FLORRIE_SHAPES.length - 1)];
+  const others = shuffle(FLORRIE_SHAPES.filter(s => s.name !== shape.name)).slice(0, 3);
+  return {
+    subject: 'maths',
+    question: `What shape is this?\n${shape.emoji}`,
+    correct: shape.name,
+    options: shuffle([shape, ...others].map(s => s.name)),
+    typed: false
+  };
+}
+
+function generateFlorrieSession() {
+  const questions = [];
+  for (let i = 0; i < 4; i++) questions.push(generateFlorriesMathsQuestion());
+  for (let i = 0; i < 4; i++) questions.push(generateFlorrieEnglishQuestion());
+  return shuffle(questions);
+}
+
+function generateBarneySession() {
+  const questions = [];
+  const seen = new Set();
+
+  function addUnique(genFn) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const q = genFn();
+      if (!seen.has(q.question)) {
+        seen.add(q.question);
+        questions.push(q);
+        return;
+      }
+    }
+    // Fallback: add anyway if we can't find a unique one after 20 tries
+    questions.push(genFn());
+  }
+
+  for (let i = 0; i < 5; i++) addUnique(generateMathsQuestion);
+  for (let i = 0; i < 5; i++) addUnique(generateEnglishQuestion);
+  return shuffle(questions);
+}
+
+// ═══════════════════════════════════════════════════
+//  BADGES
+// ═══════════════════════════════════════════════════
+const BADGE_DEFS = [
+  { id: 'first_session',  emoji: '🏅', label: 'First Adventure',  desc: 'Completed your first session!' },
+  { id: 'session_2',      emoji: '⭐', label: 'Star Collector',    desc: 'Completed 2 sessions!' },
+  { id: 'session_5',      emoji: '🔥', label: 'On Fire!',          desc: 'Completed 5 sessions!' },
+  { id: 'session_10',     emoji: '💎', label: 'Diamond Learner',   desc: 'Completed 10 sessions!' },
+  { id: 'streak_3',       emoji: '🌟', label: '3-Day Streak',      desc: 'Played 3 days in a row!' },
+  { id: 'streak_7',       emoji: '🏆', label: 'Week Champion',     desc: 'Played 7 days in a row!' },
+  { id: 'stars_50',       emoji: '🎖️', label: '50 Stars',          desc: 'Earned 50 stars!' },
+  { id: 'stars_100',      emoji: '👑', label: 'Star King',         desc: 'Earned 100 stars!' },
+  { id: 'perfect_session',emoji: '✨', label: 'Perfect Session',   desc: 'Got all 10 right in one session!' },
+];
+
+function checkBadges(s, sessionScore, sessionTotal) {
+  const newBadges = [];
+  if (!s.sessionCount) s.sessionCount = 0;
+  s.sessionCount++;
+  const sessionCount = s.sessionCount;
+
+  if (!s.badges.first_session) { s.badges.first_session = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'first_session')); }
+  if (sessionCount >= 2 && !s.badges.session_2) { s.badges.session_2 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'session_2')); }
+  if (sessionCount >= 5 && !s.badges.session_5) { s.badges.session_5 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'session_5')); }
+  if (sessionCount >= 10 && !s.badges.session_10) { s.badges.session_10 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'session_10')); }
+  if (s.currentStreak >= 3 && !s.badges.streak_3) { s.badges.streak_3 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'streak_3')); }
+  if (s.currentStreak >= 7 && !s.badges.streak_7) { s.badges.streak_7 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'streak_7')); }
+  if (s.totalStars >= 50 && !s.badges.stars_50) { s.badges.stars_50 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'stars_50')); }
+  if (s.totalStars >= 100 && !s.badges.stars_100) { s.badges.stars_100 = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'stars_100')); }
+  if (sessionScore === sessionTotal && !s.badges.perfect_session) { s.badges.perfect_session = true; newBadges.push(BADGE_DEFS.find(b => b.id === 'perfect_session')); }
+  return newBadges;
+}
+
+// ═══════════════════════════════════════════════════
+//  SOUND
+// ═══════════════════════════════════════════════════
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, vol = 0.3) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function soundCorrect() {
+  playTone(523, 'sine', 0.12);
+  setTimeout(() => playTone(659, 'sine', 0.12), 100);
+  setTimeout(() => playTone(784, 'sine', 0.2), 200);
+}
+
+function soundWrong() {
+  playTone(300, 'sawtooth', 0.15, 0.2);
+  setTimeout(() => playTone(250, 'sawtooth', 0.2, 0.2), 100);
+}
+
+function soundStreak() {
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.15, 0.4), i * 80));
+}
+
+function soundComplete() {
+  [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => playTone(f, 'triangle', 0.25, 0.5), i * 100));
+}
+
+// ═══════════════════════════════════════════════════
+//  CONFETTI
+// ═══════════════════════════════════════════════════
+function launchConfetti() {
+  const colours = ['#F59E0B','#EC4899','#7C3AED','#10B981','#3B82F6','#EF4444'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colours[Math.floor(Math.random() * colours.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay = (Math.random() * 0.5) + 's';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+}
+
+function starBurst(x, y) {
+  const el = document.createElement('div');
+  el.className = 'star-burst';
+  el.textContent = '⭐';
+  el.style.left = (x - 16) + 'px';
+  el.style.top = (y - 16) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ═══════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  const header = document.getElementById('header');
+  header.classList.toggle('visible', id !== 'picker' && id !== 'passcode');
+  if (id === 'all-done') renderAllDone();
+  updateHeader();
+}
+
+function updateHeader() {
+  const s = getState();
+  document.getElementById('header-title').textContent = `${getChild().name}'s Adventure`;
+  document.getElementById('header-stars').textContent = s.totalStars;
+  document.getElementById('header-streak').textContent = s.currentStreak;
+}
+
+function showPicker() {
+  cancelSpeech();
+  showScreen('picker');
+}
+
+// Populated whenever the all-done screen is shown (see showScreen)
+function renderAllDone() {
+  const child = getChild();
+  document.getElementById('all-done-companion').textContent = child.companionEmoji;
+  document.getElementById('all-done-name').textContent = child.name;
+  document.getElementById('all-done-companion-name').textContent = child.companionName;
+  document.getElementById('all-done-stars').textContent = getState().totalStars;
+}
+
+function selectChild(childKey) {
+  activeChild = childKey;
+  // Pull progress down BEFORE rendering home. checkNewDay() writes state, and on a
+  // device with no localStorage that write would otherwise overwrite good remote
+  // data with a blank default. Time-boxed so a slow connection can't block play.
+  const timeout = new Promise(resolve => setTimeout(resolve, 4000));
+  Promise.race([syncFromFirebase(childKey), timeout]).then(() => {
+    if (activeChild !== childKey) return;
+    showHome(true);
+  });
+}
+
+function showHome(speakWelcome) {
+  cancelSpeech();
+  const s = checkNewDay(getState());
+  renderHome(s);
+  showScreen('home');
+  if (speakWelcome) blazeSpeak(pick(getVoice().welcome));
+}
+
+function renderHome(s) {
+  const child = getChild();
+
+  // Companion
+  document.getElementById('home-companion').textContent = child.companionEmoji;
+
+  // Greeting
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('home-greeting').textContent = `${greet}, ${child.name}! 👋`;
+
+  // Speech
+  const speeches = [
+    `Ready for today's adventure, ${child.name}? ${child.companionEmoji}`,
+    "Let's learn something amazing today!",
+    `${child.companionName} believes in you, ${child.name}! You've got this! 🔥`,
+    `You've got ${s.totalStars} stars — let's get more! ⭐`,
+    "Every question makes you smarter! 🧠"
+  ];
+  document.getElementById('home-speech').textContent = speeches[Math.floor(Math.random() * speeches.length)];
+
+  // Star total
+  document.getElementById('total-stars-display').textContent = s.totalStars;
+
+  // Session cards
+  const half = child.sessionSize / 2;
+  [0, 1].forEach(i => {
+    const card = document.getElementById(`session-card-${i}`);
+    document.getElementById(`session-sub-${i}`).textContent = `${half} Maths + ${half} English`;
+    if (s.sessionsDoneToday.includes(i)) {
+      card.classList.add('done');
+    } else {
+      card.classList.remove('done');
+    }
+  });
+
+  // Streak calendar (last 7 days)
+  const row = document.getElementById('streak-row');
+  row.innerHTML = '';
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    const played = s.streakHistory && s.streakHistory.includes(ds);
+    const div = document.createElement('div');
+    div.className = 'streak-day' + (played ? ' filled' : '');
+    div.innerHTML = `${played ? '🔥' : ''}<span class="day-label">${dayNames[d.getDay()]}</span>`;
+    row.appendChild(div);
+  }
+
+  // Trophy shelf
+  const shelf = document.getElementById('badge-shelf');
+  shelf.innerHTML = '';
+  BADGE_DEFS.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'badge' + (s.badges[b.id] ? ' earned' : '');
+    el.textContent = b.emoji;
+    el.title = b.label + (s.badges[b.id] ? ' ✅' : ' 🔒');
+    shelf.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  QUIZ ENGINE
+// ═══════════════════════════════════════════════════
+let quiz = {
+  questions: [],
+  current: 0,
+  sessionIndex: 0,
+  correctCount: 0,
+  starsThisSession: 0,
+  consecutiveCorrect: 0,
+  answered: false
+};
+
+function startSession(sessionIndex) {
+  let s = checkNewDay(getState());
+  if (s.sessionsDoneToday.includes(sessionIndex)) return;
+
+  quiz.questions = getChild().generateSession();
+  quiz.current = 0;
+  quiz.sessionIndex = sessionIndex;
+  quiz.correctCount = 0;
+  quiz.starsThisSession = 0;
+  quiz.consecutiveCorrect = 0;
+  quiz.answered = false;
+
+  // Clear the previous session's leftovers before the screen is shown. The first
+  // question isn't rendered until the intro voice line finishes, so without this
+  // the static placeholders (wrong companion, wrong question count) stay visible.
+  resetQuizScreen();
+
+  showScreen('quiz');
+  // Speak session start line, then render first question after it finishes
+  blazeSpeak(pick(getVoice().sessionStart)).then(() => renderQuestion());
+}
+
+function resetQuizScreen() {
+  const total = quiz.questions.length;
+  document.getElementById('quiz-dragon').textContent = getChild().companionEmoji;
+  document.getElementById('quiz-dragon').className = 'quiz-dragon';
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-label').textContent = `Question 1 of ${total}`;
+  document.getElementById('quiz-question').textContent = 'Get ready…';
+  document.getElementById('subject-tag').textContent = '';
+  document.getElementById('subject-tag').className = 'quiz-subject-tag';
+  document.getElementById('answers-grid').innerHTML = '';
+  document.getElementById('feedback-msg').textContent = '';
+  document.getElementById('feedback-msg').className = 'feedback-msg';
+  document.getElementById('streak-counter').textContent = '';
+  document.getElementById('hear-word-wrap').style.display = 'none';
+}
+
+function renderQuestion() {
+  const q = quiz.questions[quiz.current];
+  const total = quiz.questions.length;
+
+  // Progress
+  const pct = (quiz.current / total) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `Question ${quiz.current + 1} of ${total}`;
+
+  // Subject tag
+  const tag = document.getElementById('subject-tag');
+  tag.textContent = q.subject === 'maths' ? '📐 Maths' : '📖 English';
+  tag.className = 'quiz-subject-tag ' + (q.subject === 'maths' ? 'tag-maths' : 'tag-english');
+
+  // Question text (handle newlines)
+  const qEl = document.getElementById('quiz-question');
+  qEl.textContent = q.question;
+
+  // Companion
+  document.getElementById('quiz-dragon').textContent = getChild().companionEmoji;
+  document.getElementById('quiz-dragon').className = 'quiz-dragon';
+
+  document.getElementById('hear-word-wrap').style.display = 'none';
+  if (q.speakWord) speakWord(q.speakWord);
+
+  // Feedback
+  document.getElementById('feedback-msg').textContent = '';
+  document.getElementById('feedback-msg').className = 'feedback-msg';
+
+  // Streak
+  document.getElementById('streak-counter').textContent = quiz.consecutiveCorrect >= 2
+    ? `🔥 ${quiz.consecutiveCorrect} in a row!` : '';
+
+  // Answers
+  const grid = document.getElementById('answers-grid');
+  const typeWrap = document.getElementById('type-answer-wrap');
+
+  if (q.typed) {
+    grid.style.display = 'none';
+    typeWrap.style.display = 'flex';
+    document.getElementById('type-input').value = '';
+    setTimeout(() => document.getElementById('type-input').focus(), 100);
+  } else {
+    grid.style.display = 'grid';
+    typeWrap.style.display = 'none';
+    grid.innerHTML = '';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = opt;
+      btn.onclick = (e) => selectAnswer(opt, btn, e);
+      grid.appendChild(btn);
+    });
+  }
+
+  quiz.answered = false;
+}
+
+function selectAnswer(chosen, btnEl, event) {
+  if (quiz.answered) return;
+  quiz.answered = true;
+
+  const q = quiz.questions[quiz.current];
+  const correct = chosen === q.correct;
+
+  // Disable all buttons
+  document.querySelectorAll('.answer-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.correct) b.classList.add('correct-ans');
+  });
+  if (!correct) btnEl.classList.add('wrong-ans');
+
+  handleAnswer(correct, chosen, q, event ? event.clientX : window.innerWidth/2, event ? event.clientY : window.innerHeight/2);
+}
+
+function submitTyped() {
+  if (quiz.answered) return;
+  const val = document.getElementById('type-input').value.trim();
+  if (!val) return;
+  quiz.answered = true;
+  const q = quiz.questions[quiz.current];
+  const correct = val === q.correct;
+  handleAnswer(correct, val, q, window.innerWidth / 2, window.innerHeight / 2);
+}
+
+function handleAnswer(correct, chosen, q, x, y) {
+  let s = getState();
+  s.totalQuestions++;
+
+  const feedback = document.getElementById('feedback-msg');
+  const dragon = document.getElementById('quiz-dragon');
+
+  if (correct) {
+    quiz.correctCount++;
+    quiz.consecutiveCorrect++;
+    let stars = 1;
+    let msg = '';
+
+    const praises = ['Brilliant! 🌟', 'Fantastic! ✨', 'Spot on! 🎯', `Amazing! ${getChild().companionEmoji}`, 'Well done! ⭐'];
+    msg = praises[Math.floor(Math.random() * praises.length)];
+
+    if (quiz.consecutiveCorrect === 3) {
+      stars = 2;
+      msg = '🔥 3 in a row! BONUS STAR! 🌟';
+      soundStreak();
+      blazeSpeak(pick(getVoice().streak));
+    } else if (quiz.consecutiveCorrect > 3 && quiz.consecutiveCorrect % 3 === 0) {
+      stars = 2;
+      msg = `🔥 ${quiz.consecutiveCorrect} in a row! BONUS! 🌟`;
+      soundStreak();
+      blazeSpeak(pick(getVoice().streak));
+    } else {
+      soundCorrect();
+      blazeSpeak(pick(getVoice().correct));
+    }
+
+    quiz.starsThisSession += stars;
+    s.totalStars += stars;
+    feedback.textContent = msg;
+    feedback.className = 'feedback-msg correct-text';
+    dragon.className = 'quiz-dragon correct';
+    starBurst(x, y);
+  } else {
+    quiz.consecutiveCorrect = 0;
+    soundWrong();
+    blazeSpeak(pick(getVoice().wrong));
+    const sympathy = ["Almost! The answer was: " + q.correct, "Not quite — it's " + q.correct + "!", "Good try! Answer: " + q.correct];
+    feedback.textContent = sympathy[Math.floor(Math.random() * sympathy.length)];
+    feedback.className = 'feedback-msg wrong-text';
+    dragon.className = 'quiz-dragon wrong';
+
+    // Store wrong answer
+    s.wrongAnswers.unshift({ question: q.question, given: chosen, correct: q.correct, subject: q.subject });
+    if (s.wrongAnswers.length > 20) s.wrongAnswers = s.wrongAnswers.slice(0, 20);
+  }
+
+  saveState(s);
+  updateHeader();
+
+  // Advance after delay
+  setTimeout(nextQuestion, 1600);
+}
+
+function nextQuestion() {
+  quiz.current++;
+  if (quiz.current >= quiz.questions.length) {
+    finishSession();
+  } else {
+    renderQuestion();
+  }
+}
+
+function finishSession() {
+  let s = getState();
+
+  // Mark session done
+  if (!s.sessionsDoneToday.includes(quiz.sessionIndex)) {
+    s.sessionsDoneToday.push(quiz.sessionIndex);
+  }
+
+  // Update streak
+  const today = todayStr();
+  if (!s.streakHistory) s.streakHistory = [];
+  if (!s.streakHistory.includes(today)) {
+    s.streakHistory.push(today);
+    if (s.streakHistory.length > 30) s.streakHistory = s.streakHistory.slice(-30);
+  }
+
+  // Streak calculation
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yd = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+  if (s.lastPlayDate === yd || s.lastPlayDate === today) {
+    if (s.lastPlayDate !== today) s.currentStreak++;
+  } else {
+    s.currentStreak = 1;
+  }
+  s.lastPlayDate = today;
+
+  // Check badges
+  const newBadges = checkBadges(s, quiz.correctCount, quiz.questions.length);
+  saveState(s);
+
+  // Session complete screen
+  const allDone = s.sessionsDoneToday.length >= 2;
+
+  const child = getChild();
+  document.getElementById('complete-companion').textContent = child.companionEmoji;
+
+  const titles = ['Amazing Work! 🎉', 'You\'re a Star! 🌟', `Brilliant ${child.name}! ${child.companionEmoji}`, 'Super Learner! 💪'];
+  document.getElementById('complete-title').textContent = titles[Math.floor(Math.random() * titles.length)];
+  document.getElementById('complete-stars').textContent = `You earned ⭐ ${quiz.starsThisSession} stars!`;
+
+  const msgs = [`${child.companionName} is SO proud of you!`, 'You\'re getting smarter every day!', 'Keep it up — you\'re amazing!'];
+  document.getElementById('complete-message').textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  document.getElementById('session-score-wrap').textContent =
+    `${child.name} got ${quiz.correctCount} out of ${quiz.questions.length} correct`;
+
+  if (newBadges.length > 0) {
+    document.getElementById('badge-earned-display').textContent = newBadges[0].emoji;
+    document.getElementById('badge-earned-label').textContent = '🏆 New badge: ' + newBadges[0].label;
+  } else {
+    document.getElementById('badge-earned-display').textContent = '';
+    document.getElementById('badge-earned-label').textContent = '';
+  }
+
+  soundComplete();
+  launchConfetti();
+  showScreen('session-complete');
+  if (s.currentStreak >= 7 && newBadges.some(b => b && b.id === 'streak_7')) {
+    blazeSpeak(pick(getVoice().weekStreak));
+  } else {
+    blazeSpeak(pick(getVoice().sessionComplete));
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PASSCODE
+// ═══════════════════════════════════════════════════
+let passcodeBuffer = '';
+let passcodeTarget = 'parent';
+let passcodeReturn = 'picker';
+
+function showPasscodeScreen(target) {
+  passcodeBuffer = '';
+  passcodeTarget = target;
+  // Remember where we came from so Cancel goes back there, not always to home
+  passcodeReturn = document.getElementById('screen-picker').classList.contains('active')
+    ? 'picker' : 'home';
+  document.getElementById('passcode-display').textContent = '_ _ _ _';
+  showScreen('passcode');
+}
+
+function passcodeCancel() {
+  if (passcodeReturn === 'picker') showPicker();
+  else showHome();
+}
+
+function passcodePress(key) {
+  if (key === 'clear') { passcodeBuffer = ''; }
+  else if (key === 'back') { passcodeBuffer = passcodeBuffer.slice(0, -1); }
+  else if (passcodeBuffer.length < 4) { passcodeBuffer += key; }
+
+  const dots = passcodeBuffer.split('').map(() => '●').join(' ');
+  const blanks = Array(4 - passcodeBuffer.length).fill('_').join(' ');
+  document.getElementById('passcode-display').textContent = (dots + (dots && blanks ? ' ' : '') + blanks).trim();
+
+  if (passcodeBuffer.length === 4) {
+    const s = getState();
+    if (passcodeBuffer === s.passcode) {
+      if (passcodeTarget === 'parent') showParentDashboard();
+      else if (passcodeTarget === 'change') doChangePasscode();
+    } else {
+      document.getElementById('passcode-display').textContent = '✗ Wrong!';
+      passcodeBuffer = '';
+      setTimeout(() => { document.getElementById('passcode-display').textContent = '_ _ _ _'; }, 1000);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PARENT DASHBOARD
+// ═══════════════════════════════════════════════════
+function showParentDashboard() {
+  const s = checkNewDay(getState());
+  document.getElementById('parent-title').textContent = `📊 Parent Dashboard — ${getChild().name}`;
+  document.getElementById('p-total-stars').textContent = s.totalStars;
+  document.getElementById('p-today-sessions').textContent = `${s.sessionsDoneToday.length}/2`;
+  document.getElementById('p-streak').textContent = s.currentStreak;
+  document.getElementById('p-total-q').textContent = s.totalQuestions;
+
+  const wrongContent = document.getElementById('wrong-list-content');
+  if (s.wrongAnswers.length === 0) {
+    wrongContent.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem">No incorrect answers yet!</p>';
+  } else {
+    const childName = getChild().name;
+    wrongContent.innerHTML = s.wrongAnswers.slice(0, 10).map(w =>
+      `<div class="wrong-item">
+        <strong>${w.subject === 'maths' ? '📐' : '📖'}</strong>
+        ${w.question.replace(/\n/g,' ')} —
+        ${childName} said: <em>${w.given}</em>,
+        correct: <strong>${w.correct}</strong>
+      </div>`
+    ).join('');
+  }
+
+  showScreen('parent');
+}
+
+function resetAll() {
+  const child = getChild();
+  if (confirm(`Are you sure you want to reset ALL of ${child.name}'s progress?`)) {
+    delete cachedStates[activeChild];
+    localStorage.removeItem(getStorageKey());
+    getDataRef().remove().catch(e => console.warn('Firebase reset failed:', e));
+    showHome();
+  }
+}
+
+let newPasscode = '';
+function resetPasscode() {
+  newPasscode = '';
+  alert('Enter a new 4-digit passcode on the next screen. Current default: 1234');
+  // Simple: prompt
+  const np = prompt('Enter new 4-digit passcode:');
+  if (np && /^\d{4}$/.test(np)) {
+    const s = getState();
+    s.passcode = np;
+    saveState(s);
+    alert('Passcode changed!');
+  } else {
+    alert('Invalid passcode — must be 4 digits.');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  ENTER KEY for typed answers
+// ═══════════════════════════════════════════════════
+document.getElementById('type-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitTyped();
+});
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+// Pull the chosen child's progress down from Firebase. Runs from selectChild(),
+// because activeChild isn't known until a picker card is tapped.
+function syncFromFirebase(childKey) {
+  return getDataRef().once('value').then(snap => {
+    const remote = snap.val();
+    if (!remote) return;
+    // Ignore a late response if the player switched while it was in flight
+    if (activeChild !== childKey) return;
+    const local = getState();
+    // Use whichever has more total stars (simple conflict resolution)
+    if (remote.totalStars >= local.totalStars) {
+      const merged = Object.assign(defaultState(), remote);
+      cachedStates[childKey] = merged;
+      localStorage.setItem(CHILDREN[childKey].storageKey, JSON.stringify(merged));
+    }
+  }).catch(e => console.warn('Firebase load failed, using local data:', e));
+}
+
+window.addEventListener('load', () => {
+  showScreen('picker');
+});
+</script>
+</body>
+</html>
