@@ -51,6 +51,20 @@
     .header-streak { font-size: 1rem; color: var(--text-muted); }
     .header-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-light); }
 
+    /* ── BACK TO SITE (picker screen only) ── */
+    .site-back-link {
+      position: fixed;
+      top: 0.75rem;
+      left: 1rem;
+      z-index: 200;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      opacity: 0.65;
+      text-decoration: none;
+      transition: opacity 0.2s, color 0.2s;
+    }
+    .site-back-link:hover { opacity: 1; color: var(--primary-light); }
+
     /* ── PICKER ── */
     #screen-picker {
       background: radial-gradient(ellipse at 50% 0%, #4C1D95 0%, #1E1B4B 70%);
@@ -267,6 +281,9 @@
   </style>
 </head>
 <body>
+
+<!-- Back to the site. Shown on the picker screen only — see showScreen() -->
+<a href="/projects/" class="site-back-link" id="site-back-link">← Projects</a>
 
 <!-- HEADER -->
 <div id="header">
@@ -1180,6 +1197,8 @@ function showScreen(id) {
   document.getElementById('screen-' + id).classList.add('active');
   const header = document.getElementById('header');
   header.classList.toggle('visible', id !== 'picker' && id !== 'passcode');
+  // Only offer the way out from the picker — it must not sit over a child's quiz
+  document.getElementById('site-back-link').style.display = (id === 'picker') ? 'block' : 'none';
   if (id === 'all-done') renderAllDone();
   updateHeader();
 }
