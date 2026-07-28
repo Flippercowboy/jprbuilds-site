@@ -599,7 +599,9 @@ const CHILDREN = {
     storageKey: 'barney_state',
     firebasePath: 'barney',
     sessionSize: 10,        // 5 maths + 5 english
-    stretchRatio: 0.4,      // 2 of each 5 are Year 3 — raise as he improves
+    // Year 3 mix, per subject. Raise or lower as he improves.
+    stretchMaths: 0.4,      // 2 of every 5 maths questions are Year 3
+    stretchEnglish: 0,      // English stays Year 2 — Year 3 English was too advanced
     generateSession: generateBarneySession,
     voice: BARNEY_VOICE,
     voiceId: 'xsiB5fGhEtknnqzudCO6'
@@ -826,7 +828,11 @@ const TIMES = [
 ];
 
 // ── YEAR 3 STRETCH CONTENT ──
-// Mixed into Barney's sessions at CHILDREN.barney.stretchRatio.
+// Maths is mixed in at CHILDREN.barney.stretchMaths.
+//
+// The English banks below are currently DORMANT: stretchEnglish is 0 because
+// Year 3 English proved too advanced. They are kept, along with their audio, so
+// re-enabling is a one-number change — set stretchEnglish to 0.2 for 1 in 5.
 
 // Curated: real misspellings children actually make, not scrambled letters.
 const YEAR3_SPELLINGS = [
@@ -1299,12 +1305,14 @@ function generateBarneySession() {
     questions.push(genFn());
   }
 
-  // Mix in Year 3 stretch questions. Raise stretchRatio in CHILDREN as he improves.
-  const perSubject = CHILDREN.barney.sessionSize / 2;
-  const stretch = Math.round(perSubject * CHILDREN.barney.stretchRatio);
+  // Mix in Year 3 stretch questions, per subject. See CHILDREN.barney.
+  const child = CHILDREN.barney;
+  const perSubject = child.sessionSize / 2;
+  const mathsStretch = Math.round(perSubject * child.stretchMaths);
+  const englishStretch = Math.round(perSubject * child.stretchEnglish);
 
-  for (let i = 0; i < perSubject; i++) addUnique(i < stretch ? generateYear3MathsQuestion : generateMathsQuestion);
-  for (let i = 0; i < perSubject; i++) addUnique(i < stretch ? generateYear3EnglishQuestion : generateEnglishQuestion);
+  for (let i = 0; i < perSubject; i++) addUnique(i < mathsStretch ? generateYear3MathsQuestion : generateMathsQuestion);
+  for (let i = 0; i < perSubject; i++) addUnique(i < englishStretch ? generateYear3EnglishQuestion : generateEnglishQuestion);
   return shuffle(questions);
 }
 
