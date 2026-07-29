@@ -203,6 +203,9 @@
     .answer-btn.wrong-ans { background: #7F1D1D; border-color: #EF4444; color: white; }
     .answer-btn:disabled { cursor: default; }
 
+    /* Big target — it gets pressed by a four-year-old */
+    .say-again-btn { font-size: 1.15rem; padding: 14px 34px; }
+
     .feedback-msg { font-size: 1.1rem; font-weight: 700; text-align: center; min-height: 28px; }
     .feedback-msg.correct-text { color: var(--success); }
     .feedback-msg.wrong-text { color: var(--danger); }
@@ -380,6 +383,11 @@
     <!-- Hear word button (spelling/phonics only) -->
     <div id="hear-word-wrap" style="display:none; margin-bottom:12px">
       <button class="btn btn-secondary" style="font-size:1rem;padding:10px 28px" onclick="replayWord()">🔊 Hear the word again</button>
+    </div>
+
+    <!-- Replay the whole question — for children who can't read yet -->
+    <div id="say-again-wrap" style="display:none; margin-bottom:16px">
+      <button class="btn btn-secondary say-again-btn" onclick="sayAgain()">🔊 Say it again</button>
     </div>
 
     <!-- Multiple choice -->
@@ -614,6 +622,7 @@ const CHILDREN = {
     storageKey: 'florrie_state',
     firebasePath: 'florrie',
     sessionSize: 8,         // 4 maths + 4 english
+    readAloud: true,        // she can't read yet — questions and options are spoken
     generateSession: generateFlorrieSession,
     voice: FLORRIE_VOICE,
     voiceId: 'piI8Kku0DcvcL6TTSeQt'
@@ -676,6 +685,20 @@ function replayWord() {
     currentWordAudio.currentTime = 0;
     currentWordAudio.play();
   }
+}
+
+// For a child who can't read yet: speak the question, then each option in the
+// order they appear on screen. Some questions suppress the options — see the
+// sight-word question, where reading them would remove the task entirely.
+function readQuestionAloud(q) {
+  if (!getChild().readAloud || !q) return;
+  blazeSpeak(q.speakText || q.question);
+  if (q.speakOptions !== false) q.options.forEach(opt => blazeSpeak(opt));
+}
+
+function sayAgain() {
+  cancelSpeech();
+  readQuestionAloud(quiz.questions[quiz.current]);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1158,7 +1181,16 @@ const RHYME_PAIRS = [
   { word: 'hen', correct: 'ten', options: ['ten','sat','mud','hop'] }
 ];
 
-const COUNT_EMOJIS = ['🍎','🌟','🐶','🍪','🎈'];
+// Each carries the plural word so the question can be read aloud — the emoji
+// itself can't be spoken, and the repeated row must never be read out or it
+// would give away the count.
+const COUNT_ITEMS = [
+  { emoji: '🍎', name: 'apples' },
+  { emoji: '🌟', name: 'stars' },
+  { emoji: '🐶', name: 'dogs' },
+  { emoji: '🍪', name: 'cookies' },
+  { emoji: '🎈', name: 'balloons' }
+];
 
 const FLORRIE_SHAPES = [
   { name: 'Circle',   emoji: '⭕' },
@@ -1188,6 +1220,7 @@ function generateFlorrieEnglishQuestion() {
     return {
       subject: 'english',
       question: `Which word starts with the letter ${item.letter}?`,
+      speakText: `Which word starts with the letter ${item.letter}?`,
       correct: item.correct,
       options: shuffle(item.options),
       typed: false
@@ -1199,17 +1232,22 @@ function generateFlorrieEnglishQuestion() {
     return {
       subject: 'english',
       question: `Which word rhymes with "${item.word}"?`,
+      speakText: `Which word rhymes with ${item.word}?`,
       correct: item.correct,
       options: shuffle(item.options),
       typed: false
     };
   }
-  // Sight words — find the matching word among 3 distractors from the same list
+  // Sight words — find the matching word among 3 distractors from the same list.
+  // The options are deliberately NOT read aloud: this question is about matching
+  // a spoken word to a written one, and reading the choices would remove the task.
   const word = RECEPTION_SIGHT_WORDS[rand(0, RECEPTION_SIGHT_WORDS.length - 1)];
   const distractors = shuffle(RECEPTION_SIGHT_WORDS.filter(w => w !== word)).slice(0, 3);
   return {
     subject: 'english',
     question: `Can you find the word "${word}"?`,
+    speakText: `Can you find the word ${word}?`,
+    speakOptions: false,
     correct: word,
     options: shuffle([word, ...distractors]),
     typed: false
@@ -1221,11 +1259,12 @@ function generateFlorriesMathsQuestion() {
 
   if (type === 0) {
     // Count objects
-    const emoji = COUNT_EMOJIS[rand(0, COUNT_EMOJIS.length - 1)];
+    const item = COUNT_ITEMS[rand(0, COUNT_ITEMS.length - 1)];
     const count = rand(1, 5);
     return {
       subject: 'maths',
-      question: `How many ${emoji} can you count?\n${emoji.repeat(count)}`,
+      question: `How many ${item.emoji} can you count?\n${item.emoji.repeat(count)}`,
+      speakText: `How many ${item.name} can you count?`,
       correct: String(count),
       options: numberOptions(count, 1),
       typed: false
@@ -1239,6 +1278,7 @@ function generateFlorriesMathsQuestion() {
     return {
       subject: 'maths',
       question: `What is ${a} + ${b}?`,
+      speakText: `What is ${a} plus ${b}?`,
       correct: String(correct),
       options: numberOptions(correct, 0),
       typed: false
@@ -1252,6 +1292,7 @@ function generateFlorriesMathsQuestion() {
     return {
       subject: 'maths',
       question: `You have ${a} 🍪 and eat ${b} — how many are left?`,
+      speakText: `You have ${a} cookies and eat ${b}. How many are left?`,
       correct: String(correct),
       options: numberOptions(correct, 0),
       typed: false
@@ -1264,6 +1305,7 @@ function generateFlorriesMathsQuestion() {
     return {
       subject: 'maths',
       question: `What number is missing?\n${n - 1}, ${n}, ?, ${n + 2}`,
+      speakText: `What number is missing? ${n - 1}, ${n}, mystery number, ${n + 2}`,
       correct: String(correct),
       options: numberOptions(correct, 1),
       typed: false
@@ -1275,6 +1317,7 @@ function generateFlorriesMathsQuestion() {
   return {
     subject: 'maths',
     question: `What shape is this?\n${shape.emoji}`,
+    speakText: 'What shape is this?',
     correct: shape.name,
     options: shuffle([shape, ...others].map(s => s.name)),
     typed: false
@@ -1589,6 +1632,7 @@ function resetQuizScreen() {
   document.getElementById('feedback-msg').className = 'feedback-msg';
   document.getElementById('streak-counter').textContent = '';
   document.getElementById('hear-word-wrap').style.display = 'none';
+  document.getElementById('say-again-wrap').style.display = 'none';
 }
 
 function renderQuestion() {
@@ -1647,6 +1691,10 @@ function renderQuestion() {
     });
   }
 
+  // Read it out — after the buttons exist, so the spoken order matches the screen
+  document.getElementById('say-again-wrap').style.display = getChild().readAloud ? 'block' : 'none';
+  readQuestionAloud(q);
+
   quiz.answered = false;
 }
 
@@ -1678,6 +1726,9 @@ function submitTyped() {
 }
 
 function handleAnswer(correct, chosen, q, x, y) {
+  // She has answered — stop reading the remaining options over her
+  if (getChild().readAloud) cancelSpeech();
+
   let s = getState();
   s.totalQuestions++;
 
