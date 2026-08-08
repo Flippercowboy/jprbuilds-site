@@ -4,3 +4,4 @@ strava/gmail_credentials.php
 strava/cache/
 solar/config.php
 .claude/
+node_modules/
